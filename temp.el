@@ -12,10 +12,13 @@
 ;; on save from *status. This is undoubtedly difficult, even with the
 ;; shell access ZNC gives admins.
 
+;; not implemented
 ;; (defcustom zncirce-enable-command-mutex t
 ;;    "Wait for responses before allowing the user to send another command.
 ;;     If a new command is attempted while waiting for a reply from the 
-;;     previous one, an error results, and nothing is attempted.")
+;;     previous one, an error results, and nothing is attempted."
+;;     :type 'boolean
+;;     :group 'zncirce)
 
 
 ;; Hmm. Unfortunately it is difficult to figure out how to dynamically guess what server you're on. IDK how to do it. For now I will wrap this in a lambda and just return freenode.
@@ -37,11 +40,11 @@
   (irc-handler-remove
    (circe-irc-handler-table)
    "irc.message"
-   #'control-reply)
+   #'zncirce-control-reply)
   (setq zncirce-command-mutex nil)
   (message "Unset circe-znc-mutex"))
 
-(defun control-reply (server-proc event fq-username channel contents)
+(defun zncirce-control-reply (server-proc event fq-username channel contents)
   "this is put on circe's irc-handler-table, reads the next event from
 ,*controlpanel, displays it in the minibuffer, and then pops itself
 off. Can easily be replaced with a function that does something else,
@@ -51,21 +54,22 @@ generated function."
     (message contents)
     (irc-handler-remove (circe-irc-handler-table)
                         "irc.message"
-                        #'control-reply)
+                        #'zncirce-control-reply)
     (setq zncirce-command-mutex nil)))
 
   
 (defun zncirce-controlpanel-wrap (func-to-wrap)
-  "given a function, add the control-reply handler to circe's
-irc.message event, and execute the function. Control-reply removes
-itself, and the function "
+  "given a function, add the zncirce-control-reply handler to circe's
+irc.message event, and execute the function. zncirce-control-reply waits for a
+message (in this case, anything that we get back from *controlpanel),
+removes itself, and the function "
   (if zncirce-command-mutex
       (message "Currently waiting for a message from *controlpanel. Try again later or remove the circe handler with zncirce-remove-control-reply")
     (progn
       (setq zncirce-command-mutex t)
       (irc-handler-add (circe-irc-handler-table)
                        "irc.message"
-                       #'control-reply)
+                       #'zncirce-control-reply)
       (funcall func-to-wrap))))
 
 (defun zncirce-get-buffer-for-chan (buf &optional arg)
@@ -99,9 +103,3 @@ take out the querying *controlpanel functionality in this code, move it to it's 
 				  (funcall zncirce-server-name)
 				  " "
 				  buf))))))
-
-
-	
-
-
-
