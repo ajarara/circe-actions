@@ -21,26 +21,25 @@
 ;;     :group 'zncirce)
 
 
-;; Hmm. Unfortunately it is difficult to figure out how to dynamically guess what server you're on. IDK how to do it. For now I will wrap this in a lambda and just return freenode.
+;; Hmm. Unfortunately it is difficult to figure out how to dynamically
+;; guess what server you're on. IDK how to do it. For now I will wrap
+;; this in a lambda and just return freenode.
 (defvar zncirce-server-name
     (lambda ()
       "freenode"))
   
   
 (defvar zncirce-command-mutex nil
-  "When set, any commands that add a function to the irc.messagen
-      handler error out. This is unset after the function removes
-      itself, or when you call zncirce-remove-control-reply (which
-      removes the function for you")
-
-
+  "When set, any commands that add a function to the irc.message
+handler error out. This is unset after the function removes
+itself, or when you call zncirce-remove-control-reply (which
+removes the function for you")
 
 (defun zncirce-remove-control-reply ()
   (interactive)
-  (irc-handler-remove
-   (circe-irc-handler-table)
-   "irc.message"
-   #'zncirce-control-reply)
+  (irc-handler-remove (circe-irc-handler-table)
+		      "irc.message"
+		      #'zncirce-control-reply)
   (setq zncirce-command-mutex nil)
   (message "Unset circe-znc-mutex"))
 

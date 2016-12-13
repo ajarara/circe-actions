@@ -1,0 +1,60 @@
+* ZNCirce
+A suite of functions that interface with ZNC's various modules accessible by private message (eg, '''/msg *status help''').
+
+This code requires circe, and invoking it assumes you are connected to a ZNC instance.
+** Todo
+*** (require 'circe)
+Or rather, figure out how to turn this into an eventual package for consumption using Cask and autoloads and whatnot. I know a lot of people use ZNC, and a lot of people use circe (and erc).
+*** Check if connected to a ZNC instance 
+Is it important to check everytime a function runs or sufficient to check once per circe session?
+*** Generating functions
+The way ZNCirce works is it first places an event handler in Circe's irc.message handler, using irc-handler-add (the internal representation is a hash table with irc.message as a key, and handlers as a list of functions)
+
+You can inspect this with (gethash "irc.message" (circe-irc-handler-table)) while in a circe buffer. It's an empty list. (fun fact, '() and nil are exactly alike once evaluated, and only serve as indicators as to what the behavior of the variable is.)
+
+In reality, handlers aren't all that expensive, but it likely is important to not pollute them, as they are all called everytime someone sends a message, which happens a lot once you have lots of channels open (I have 31).
+
+Any function on an irc.message handler (the only handler that is dealt with in this package) is called with the following arguments:
+
+**** server-proc
+**** event
+**** fq-username
+**** channel
+**** contents
+*** 
+Just testing to see what happens with this line when pushed to Github's rendering. (there is an empty headline above this sentence)
+
+So what we would like to do is generate functions that can handle these separately. For example, I'd like the ability to get the message back from *controlpanel and display it in the minibuffer, but I don't want to do it just for *controlpanel, I'd also like to do it with *status
+
+*** ZNC's aversion to git
+ZNC sports a config file, but users are discouraged from editing it directly, instead being pointed to using the web admin panel. I've disabled the web admin panel pointing on public IP addresses (which funnily enough required me editing the config file by hand), only allowing those with SSH access to use it (using SSH tunneling to forward ports to localhost)
+
+Unfortunately, this means that any configuration I make towards ZNC is not reproducible. Unless, I have some way to get that configuration file, and put it into version control. There are two ways I'm thinking of doing this:
+
+**** Remote git
+ZNC sports a commandline interface for administrators to use. This is kind of scary, specifically because I don't change my IRC password /that/ often and I know someone even mildly security oriented is already reading this with wide eyes.
+
+The gist of it is that I put the git repository in the server holding the config file, and use some git transport mechanism (likely either through circe or ssh) to clone the repo locally.
+
+***** Pros
+Well it does the job
+
+***** Cons
+I really don't want the commandline interface to be enabled, it's far too large of an attack vector for my paranoia.
+
+Further, it's complicated. I'd need to have some way to transport commit messages (or auto generate them, but that is useless when it comes to diagnostics), then some way to get the repo over here (without cloning it to some external git repo, as this contains plaintext passwords).
+
+**** Write a module that retrieves the file and returns it over IRC
+This is less disastrous. I don't need git to exist on the remote server, and don't need anything besides the ability to retrieve a single file (the only goodies of the file are the irc passwords, which you would already have access to if you know my ZNC password)
+
+***** Pros
+MUCH less security risk
+Modules can be written in Python, which I am familiar wth
+
+***** Cons
+None. Ha!
+
+
+
+
+
