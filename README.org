@@ -1,7 +1,22 @@
 * ZNCirce
-A suite of functions that interface with ZNC's various modules accessible by private message (eg, '''/msg *status help''').
+A suite of functions that interface with ZNC's various modules accessible by private message (eg, "/msg *status help").
 
 This code requires circe, and invoking it assumes you are connected to a ZNC instance.
+** A brief overview
+ZNC is an IRC relay. Instead of connecting directly to a network, I have a server handle the connections for me on a VPS, which allows me numerous benefits:
+*** Context on rejoining a channel
+It always seems to be the case all the interesting discussion starts right before you join the channel. Without appropriate context it might take a bit of guessing before you can understand what is being discussed (or alternatively, wait for some new discussion topic or whatever). Why do this when we have the giant hammer of technology to smash our fly problems?
+
+ZNC allows you to have a buffer of lines kept that is played back to you when you join a channel. This is useful for two reasons: aforementioned context and an elimination of the need to have your computer connected to the internet 24/7. This is particularly invaluable when you are connected to a channel that has little discussion.
+*** Easy client-agnostic per channel configuration
+While I like having tons of channels open, I don't necessarily need all this information. Having 3000 lines of buffered content played back to me is overload. Instead, I'd like certain channels to be buffered a specific degree. There are two ways to do this, through the web administration module, and through the control panel module.
+
+The web administration module is just a webserver that requires you to log in and you can edit all sorts of things on a serverwide, userwide, or channelwide basis. ZNC has a remarkable degree of customization backed by great documentation.
+
+Unfortunately with the webadmin, you have to trade off convenience for security: it is enabled to listen on external interfaces. If someone has access to your ZNC password, they can impersonate you, and even get shell access. So I disabled it on external interfaces, instead requiring me to use SSH (mentioned again later)
+
+The controlpanel proves a much more convenient way to handle this configuration. But it is rather verbose to change on the fly. That is what this code aims to solve.
+
 ** Todo
 *** (require 'circe)
 Or rather, figure out how to turn this into an eventual package for consumption using Cask and autoloads and whatnot. I know a lot of people use ZNC, and a lot of people use circe (and erc).
@@ -17,14 +32,39 @@ In reality, handlers aren't all that expensive, but it likely is important to no
 Any function on an irc.message handler (the only handler that is dealt with in this package) is called with the following arguments:
 
 **** server-proc
-**** event
-**** fq-username
-**** channel
-**** contents
-*** 
-Just testing to see what happens with this line when pushed to Github's rendering. (there is an empty headline above this sentence)
+I'm honestly not sure. I can't really inspect this because elisp doesn't have any string-martialing. The source says (circe-server-process) when it passes to all these handlers, so it's highly likely, but I can't say it for sure.
 
-So what we would like to do is generate functions that can handle these separately. For example, I'd like the ability to get the message back from *controlpanel and display it in the minibuffer, but I don't want to do it just for *controlpanel, I'd also like to do it with *status
+**** event
+In this case, "irc.message". Strange that this is included, but I could see a use case where you dispatch one function to many different handlers at once.
+**** fq-username
+Not the nick, the nick and some address information, or the cloak (what you'd get from /whois, if you could /whois *status)
+
+ie 
+#+BEGIN_SRC 
+/whois fsbot
+#+END_SRC
+yields:
+#+BEGIN_SRC 
+fsbot is ~fsbot@unaffiliated/deego/bot/fsbot (The Free Software bot)
+#+END_SRC
+
+What you get is a concatenation of these two strings (minus the description):
+
+fsbot!~fsbot@unaffiliated/deego/bot/fsbot
+
+In our case, the modules we're interfacing look like *controlpanel!znc@znc.in
+**** channel
+Where was it sent to? It can be a channel, but if it's a query/PM, then it's the nick it was sent to (ie, yours).
+
+**** contents
+What did the fq-username send us?
+*** 
+
+So what we would like to do is generate functions that can handle these separately. For example, I'd like the ability to get the message back from *controlpanel and display it in the minibuffer, but I don't want to do it just for *controlpanel, I'd also like to do it with *status. The way we can do this is with macros generating functions that take these parameters as arguments. This allows us to generate an irc.message handler factory.
+
+One problem is that it is difficult (probably impossible) to refer to generated functions from macro expressions without giving them symbols to later refer to them by. I didn't want to pollute the function space (I think it's called the obarray in elisp, but I might be wrong as it is a lisp-2). 
+
+Interning symbols?
 
 *** ZNC's aversion to git
 ZNC sports a config file, but users are discouraged from editing it directly, instead being pointed to using the web admin panel. I've disabled the web admin panel pointing on public IP addresses (which funnily enough required me editing the config file by hand), only allowing those with SSH access to use it (using SSH tunneling to forward ports to localhost)
@@ -49,7 +89,7 @@ This is less disastrous. I don't need git to exist on the remote server, and don
 
 ***** Pros
 MUCH less security risk
-Modules can be written in Python, which I am familiar wth
+Modules can be written in Python, which I am familiar with
 
 ***** Cons
 None. Ha!
