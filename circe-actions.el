@@ -62,20 +62,48 @@ contents - text payload of the event"
 	  )))))
 
 (defun circe-actions-activate-function (handler-function event)
-  "Given a HANDLER-FUNCTION created by circe-actions-generate-handler-function, get the symbol associated with it. If the length of circe-actions-handlers-alist exceeds circe-actions-maximum-handlers, message the user the length of the list and the symbol of the handler-function that was attempted to be activated.
+  "Given a HANDLER-FUNCTION created by
+  circe-actions-generate-handler-function, get the symbol associated
+  with it. If the length of circe-actions-handlers-alist exceeds
+  circe-actions-maximum-handlers, message the user the length of the
+  list and the symbol of the handler-function that was attempted to be
+  activated.
 
-Otherwise, add the HANDLER-FUNCTION to the circe-actions-handlers-alist (with a key of symbol and HANDLER), then place it at event in the hash-table obtained from (circe-irc-handler-table)."
-  (let ((symbol (symbol-value handler-function))
+Otherwise, add the HANDLER-FUNCTION to the
+circe-actions-handlers-alist (with a key of symbol and HANDLER), then
+place it at event in the hash-table obtained from
+(circe-irc-handler-table).
+
+TODO: symbol-value doesn't work in lexical-binding mode. -_-
+Fix it."
+  (let ((symbol (symbol-value 'handler-function))
 	(alist-len (length circe-actions-handlers-alist)))
     (if (>= alist-len circe-actions-maximum-handlers)
 	(message "circe-actions: Handler tolerance of %s exceeded, nothing added to %s! Run M-x circe-actions-inspect" alist-len event)
       (progn
 	;; add the handler-function to the list
 	(setq circe-actions-handlers-alist
-	      (cons (list symbol handler) circe-actions-handlers-alist))
+	      (cons (list symbol handler-function) circe-actions-handlers-alist))
 	;; add the handler-function to the event table. The function is now live.
 	(irc-handler-add (circe-irc-handler-table)
 			 event
 			 'handler-function)))))
 			 
+(defun circe-actions-gensym ()
+  (gensym "circe-actions-gensym-"))
 
+;; example usage? Sure!
+(defun circe-actions-message-contents (server-proc event fq-username channel contents)
+  (message contents))
+
+(defun circe-actions-lower-standards (server-proc event &rest IGNORE)
+  "Please respond."
+  (equal event "irc.message"))
+
+(circe-actions-activate-function
+ (circe-actions-generate-handler-function 'circe-actions-lower-standards
+					 'circe-actions-message-contents
+					 (circe-actions-gensym)
+					 "irc.message")
+ "irc.message"
+ )
