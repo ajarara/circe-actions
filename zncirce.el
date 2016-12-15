@@ -1,3 +1,4 @@
+
 ;; This set of functions requires you to have the controlpanel module enabled.
 ;; The neat thing about the controlpanel module is that it allows you to message
 ;; commands that modify configuration that would require you to use the web front
@@ -34,6 +35,9 @@
 ;; guess what server you're on. IDK how to do it. For now I will wrap
 ;; this in a lambda and just return freenode.
 ;; ZNC unfortunately does not provide for an irc-level mechanism to tell what server you are currently talking to (sort of.)
+;; It does however allow you to query for your connected clients (so
+;; if you're only on one client, it technically tells you, but this
+;; won't work if you're connected to any others)
 (defvar zncirce-server-name
     (lambda ()
       "freenode"))

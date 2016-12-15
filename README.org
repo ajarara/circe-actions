@@ -22,6 +22,10 @@ The controlpanel proves a much more convenient way to handle this configuration.
 Or rather, figure out how to turn this into an eventual package for consumption using Cask and autoloads and whatnot. I know a lot of people use ZNC, and a lot of people use circe (and erc).
 *** Check if connected to a ZNC instance 
 Is it important to check everytime a function runs or sufficient to check once per circe session?
+*** Split functionality of circe-actions and zncirce
+Circe-actions should provide an interface to (circe-irc-handler-table)
+This allows us to split functionality and hopefully use our concepts when extended to ERC.
+
 *** Generating functions
 The way ZNCirce works is it first places an event handler in Circe's irc.message handler, using irc-handler-add (the internal representation is a hash table with irc.message as a key, and handlers as a list of functions)
 
@@ -65,6 +69,7 @@ So what we would like to do is generate functions that can handle these separate
 One problem is that it is difficult (probably impossible) to refer to generated functions from macro expressions without giving them symbols to later refer to them by. I didn't want to pollute the function space (I think it's called the obarray in elisp, but I might be wrong as it is a lisp-2). 
 
 Interning symbols?
+*** Dynamic binding?
 
 *** ZNC's aversion to git
 ZNC sports a config file, but users are discouraged from editing it directly, instead being pointed to using the web admin panel. I've disabled the web admin panel pointing on public IP addresses (which funnily enough required me editing the config file by hand), only allowing those with SSH access to use it (using SSH tunneling to forward ports to localhost)
