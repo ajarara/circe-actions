@@ -25,17 +25,19 @@
 
   
 
-(defun circe-actions-generate-handler-function (condition-p-function action-function symbol event &optional persist)
+(defun circe-actions-generate-handler-function
+    (condition-p-function action-function symbol event &optional persist)
   "Produce a procedure aliased to a SYMBOL that executes
   ACTION-FUNCTION when CONDITION-P-FUNCTION
 
 SYMBOL should be uninterned, but doesn't have to be.
 EVENT is a string key, like irc.message obtained from circe-irc-handler-table
 
-
 if PERSIST is non-nil, do not remove the symbol from the handler
 obtained from circe-actions-handlers-alist, do not remove the handler
 from (circe-irc-handler-table), do not pass go.
+
+PERSIST is a dangerous flag to set. If you pass in an expensive condition or action, paired with a high occurence rate event, your emacs system will slow to a crawl, and the only way to deactivate it is through an interactive circe-actions-deactivate-function call.
 
 CONDITION-P-FUNCTION and ACTION-FUNCTION must be procedures with this
 argument signature:
@@ -47,20 +49,21 @@ channel - channel or, if channel is your nick, a query
 contents - text payload of the event"
   (defalias symbol
     (lambda (server-proc event fq-username channel contents)
-      (let ((args '(server-proc event fq-username channel contents)))
+      (let ((args (list server-proc event fq-username channel contents)))
 	(when (apply condition-p-function args)
 	  (apply action-function args)
 	  (unless persist
-	    ;; remove itself from the handler list first.
-	    (irc-handler-remove (circe-irc-handler-table)
-				handler
-				symbol)
-	    ;; huh? no destructive op to remove elements from a list?
-	    (setq circe-actions-handlers-alist
-		  (delete (assoc symbol circe-handlers-alist)
-			  circe-actions-handlers-alist)))
-	  )))))
+	    (circe-actions-deactivate-function symbol event)))))))
 
+(defun circe-actions-deactivate-function (handler-function event)
+  "Remove HANDLER-FUNCTION from EVENT bucket in circe-irc-handler-table, and remove it from the alist"
+  (irc-handler-remove (circe-irc-handler-table)
+		      event
+		      handler-function)
+  (setq circe-actions-handlers-alist
+	(delete (assoc handler-function circe-actions-handlers-alist)
+		circe-actions-handlers-alist)))
+	
 (defun circe-actions-activate-function (handler-function event)
   "Given a HANDLER-FUNCTION created by
   circe-actions-generate-handler-function, get the symbol associated
@@ -71,27 +74,28 @@ contents - text payload of the event"
 
 Otherwise, add the HANDLER-FUNCTION to the
 circe-actions-handlers-alist (with a key of symbol and HANDLER), then
-place it at event in the hash-table obtained from
-(circe-irc-handler-table).
+place it at event in the hash-table obtained from circe's irc handler table.
+
 
 TODO: symbol-value doesn't work in lexical-binding mode. -_-
 Fix it."
-  (let ((symbol (symbol-value 'handler-function))
-	(alist-len (length circe-actions-handlers-alist)))
+  (let ((alist-len (length circe-actions-handlers-alist)))
     (if (>= alist-len circe-actions-maximum-handlers)
-	(message "circe-actions: Handler tolerance of %s exceeded, nothing added to %s! Run M-x circe-actions-inspect" alist-len event)
+	(message "circe-actions: Handler tolerance of %s exceeded, nothing added to %s! Run M-x circe-actions-inspect (unimplemented)" alist-len event)
       (progn
 	;; add the handler-function to the list
 	(setq circe-actions-handlers-alist
-	      (cons (list symbol handler-function) circe-actions-handlers-alist))
-	;; add the handler-function to the event table. The function is now live.
+	      (cons (list handler-function event) circe-actions-handlers-alist))
+	;; add the handler-function to the event table. The function
+	;; is now called everytime event occurs.
 	(irc-handler-add (circe-irc-handler-table)
 			 event
-			 'handler-function)))))
+			 handler-function)))))
 			 
 (defun circe-actions-gensym ()
   (gensym "circe-actions-gensym-"))
 
+;; -------------------- USE CASES --------------------
 ;; example usage? Sure!
 (defun circe-actions-message-contents (server-proc event fq-username channel contents)
   (message contents))
@@ -100,10 +104,29 @@ Fix it."
   "Please respond."
   (equal event "irc.message"))
 
-(circe-actions-activate-function
- (circe-actions-generate-handler-function 'circe-actions-lower-standards
-					 'circe-actions-message-contents
-					 (circe-actions-gensym)
-					 "irc.message")
- "irc.message"
- )
+(defun circe-actions-panic ()
+  "Iterate through circe-actions-handlers-alist, deactivating all the functions stored in the alist."
+  (interactive)
+  (mapcar (lambda (handler-list)
+	    (let ((handler (car handler-list))
+		  (event (cadr handler-list)))
+	      (circe-actions-deactivate-function handler event)))
+	  circe-actions-handlers-alist)
+  (message "All handlers cleared!"))
+
+(defun circe-actions-inspect-args (&rest args)
+  (setq arg-list (cons args arg-list))
+  (message
+   (with-temp-buffer
+     (cl-prettyprint args)
+     (buffer-string)
+     )))
+
+ (circe-actions-activate-function
+  (circe-actions-generate-handler-function 'circe-actions-lower-standards
+ 					 'circe-actions-message-contents
+ 					 (circe-actions-gensym)
+ 					 "irc.message"
+					 t)
+  "irc.message"
+  )
