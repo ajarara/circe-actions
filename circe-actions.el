@@ -56,7 +56,7 @@ contents - text payload of the event"
 	    (circe-actions-deactivate-function symbol event)))))))
 
 (defun circe-actions-deactivate-function (handler-function event)
-  "Remove HANDLER-FUNCTION from EVENT bucket in circe-irc-handler-table, and remove it from the alist"
+  "Remove HANDLER-FUNCTION from EVENT bucket in circe-irc-handler-table, and remove it from the alist, in that order."
   (irc-handler-remove (circe-irc-handler-table)
 		      event
 		      handler-function)
@@ -74,11 +74,7 @@ contents - text payload of the event"
 
 Otherwise, add the HANDLER-FUNCTION to the
 circe-actions-handlers-alist (with a key of symbol and HANDLER), then
-place it at event in the hash-table obtained from circe's irc handler table.
-
-
-TODO: symbol-value doesn't work in lexical-binding mode. -_-
-Fix it."
+place it at event in the hash-table obtained from circe's irc handler table."
   (let ((alist-len (length circe-actions-handlers-alist)))
     (if (>= alist-len circe-actions-maximum-handlers)
 	(message "circe-actions: Handler tolerance of %s exceeded, nothing added to %s! Run M-x circe-actions-inspect (unimplemented)" alist-len event)
@@ -95,14 +91,37 @@ Fix it."
 (defun circe-actions-gensym ()
   (gensym "circe-actions-gensym-"))
 
-;; -------------------- USE CASES --------------------
+(defun circe-actions-register (condition-p-function action-function event &optional persist)
+  "Given a CONDITION-P-FUNCTION and ACTION-FUNCTION that takes args consistent with the EVENT passed (as shown in the README, or consulting `circe-actions-handler-arguments'):
+
+1) generate a procedure that executes ACTION-FUNCTION when CONDITION-P-FUNCTION
+2) place it and its associated event on circe-actions-handlers-alist
+3) place it on the bucket corresponding to event in (circe-irc-handler-table)
+
+If persist is set, the procedure does not remove itself after being called once. This is potentially very dangerous if your condition function is computationally expensive (or, y'know, monetarily expensive). Be careful!
+"
+  (let* ((arg-list (append (list condition-p-function
+				 action-function
+				 (circe-actions-gensym)
+				 event)
+			   persist)) ; if unset, persist is nil, the empty list
+	 (handler-function (apply 'circe-actions-generate-handler-function
+				  arg-list)))
+    (circe-actions-activate-function handler-function event)))
+
+
+(defvar circe-actions-handler-arguments nil
+  "TODO: unimplemented")
+  
 ;; example usage? Sure!
 (defun circe-actions-message-contents (server-proc event fq-username channel contents)
   (message contents))
 
-(defun circe-actions-lower-standards (server-proc event &rest IGNORE)
+(defun circe-actions-lower-standards (server-proc event fq-username &rest IGNORE)
   "Please respond."
-  (equal event "irc.message"))
+  (and (equal event "irc.message")
+       ;; no starts with? C'mon, emacs.
+       (equal fq-username "fsbot!~fsbot@unaffiliated/deego/bot/fsbot")))
 
 (defun circe-actions-panic ()
   "Iterate through circe-actions-handlers-alist, deactivating all the functions stored in the alist."
@@ -114,19 +133,12 @@ Fix it."
 	  circe-actions-handlers-alist)
   (message "All handlers cleared!"))
 
-(defun circe-actions-inspect-args (&rest args)
-  (setq arg-list (cons args arg-list))
-  (message
-   (with-temp-buffer
-     (cl-prettyprint args)
-     (buffer-string)
-     )))
-
- (circe-actions-activate-function
-  (circe-actions-generate-handler-function 'circe-actions-lower-standards
- 					 'circe-actions-message-contents
- 					 (circe-actions-gensym)
- 					 "irc.message"
-					 t)
-  "irc.message"
-  )
+;; (defvar circe-actions-arg-list '())
+;; (defun circe-actions-inspect-args (&rest args)
+;;   "A utility function designed to show you what is passed to an arbitrary handler. Was very useful when inspecting, so I though I'd leave it in here."
+;;   (setq circe-actions-arg-list (cons args circe-actions-arg-list))
+;;   (message
+;;    (with-temp-buffer
+;;      (cl-prettyprint args)
+;;      (buffer-string)
+;;      )))
