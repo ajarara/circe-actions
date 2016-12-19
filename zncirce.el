@@ -5,6 +5,7 @@
 ;; tedious.
 ;; These functions make it very easy to do what you want.
 
+;; (require 'circe-actions)
 
 (defgroup zncirce nil
   "Set of commands to inspect and modify ZNC parameters on the fly"
@@ -25,7 +26,7 @@
   (message contents))
 
 (defun zncirce-get-buffer-for-chan (buf &optional arg)
-  "Query *controlpanel for the buffer variable for a specific channel
+    "Query *controlpanel for the buffer variable for a specific channel
   (how many lines of chat to playback upon reconnection to ZNC) for a
   specific chat buffer.  Universal argument instead sets the buffer
   variable.
@@ -35,29 +36,31 @@
    number that can be active in the circe-actions-maximum-handlers
    defcustom."
   (interactive "b\np")
-  
-  ;; register the callback
-  (circe-actions-register 'zncirce-from-controlpanelp
-  			  'zncirce-message-contents
-  			  "irc.message")
+  (let ((circe-callback-func
+	 (lambda ()
+	   (circe-actions-register 'zncirce-from-controlpanelp
+				'zncirce-message-contents
+				"irc.message"))))
+    (if (= arg 4)
+	;; arg is set, set variable for the channel instead.
+	(let ((buffervar (read-number "Number of messages to buffer: ")))
+	 ;; register the callback
+	  (funcall circe-callback-func)
 
-  ;; send our query
-  
-  (if (= arg 4)
-      ;; arg is set, set variable for the channel instead.
-      (let ((buffervar (read-number "Number of messages to buffer: ")))
-	
+	  (circe-command-MSG "*controlpanel"
+			     (concat "setchan buffer $me "
+				     (funcall zncirce-server-name)
+				     " "
+				     buf
+				     " "
+				     (number-to-string buffervar))))
+      ;; arg wasn't set, just query for it instead.
+      (progn
+	;; register the callback
+	(funcall circe-callback-func)
+
 	(circe-command-MSG "*controlpanel"
-			   (concat "setchan buffer $me "
+			   (concat "getchan buffer $me "
 				   (funcall zncirce-server-name)
 				   " "
-				   buf
-				   " "
-				   (number-to-string buffervar))))
-    ;; arg wasn't set, just query for it instead.
-    (progn
-      (circe-command-MSG "*controlpanel"
-			 (concat "getchan buffer $me "
-				 (funcall zncirce-server-name)
-				 " "
-				 buf)))))
+				   buf))))))
