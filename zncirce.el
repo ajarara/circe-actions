@@ -11,8 +11,6 @@
   "Set of commands to inspect and modify ZNC parameters on the fly"
   :group 'convenience)
 
-;; (require 'circe-actions)
-
 ;; There isn't a module to get the server you are querying on. Unfortunate. IDK how to parameterize it.
 (defvar zncirce-server-name
   (lambda ()
@@ -42,11 +40,12 @@
 				'zncirce-message-contents
 				"irc.message"))))
     (if (= arg 4)
-	;; arg is set, set variable for the channel instead.
+	;; arg is set, set variable for the channel.
 	(let ((buffervar (read-number "Number of messages to buffer: ")))
 	 ;; register the callback
 	  (funcall circe-callback-func)
 
+	  ;; execute our query
 	  (circe-command-MSG "*controlpanel"
 			     (concat "setchan buffer $me "
 				     (funcall zncirce-server-name)
@@ -59,8 +58,20 @@
 	;; register the callback
 	(funcall circe-callback-func)
 
+	;; execute our query
 	(circe-command-MSG "*controlpanel"
 			   (concat "getchan buffer $me "
 				   (funcall zncirce-server-name)
 				   " "
 				   buf))))))
+
+(defun zncirce-save-config ()
+  (interactive)
+  (circe-actions-register (lambda (server-proc event fq-username channel contents)
+			    (equal fq-username "*status!znc@znc.in"))
+			  (lambda (server-proc event fq-username channel contents)
+			    (message contents))
+			  "irc.message")
+  (circe-command-MSG "*status"
+		     "SaveConfig"))
+			  

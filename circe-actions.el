@@ -88,7 +88,7 @@ place it at event in the hash-table obtained from circe's irc handler table."
 			 event
 			 handler-function)))))
 			 
-(defun circe-actions-gensym ()
+(defun circe-actions--gensym ()
   (gensym "circe-actions-gensym-"))
 
 (defun circe-actions-register (condition-p-function action-function event &optional persist)
@@ -102,26 +102,13 @@ If persist is set, the procedure does not remove itself after being called once.
 "
   (let* ((arg-list (append (list condition-p-function
 				 action-function
-				 (circe-actions-gensym)
+				 (circe-actions--gensym)
 				 event)
 			   persist)) ; if unset, persist is nil, the empty list
 	 (handler-function (apply 'circe-actions-generate-handler-function
 				  arg-list)))
     (circe-actions-activate-function handler-function event)))
 
-
-(defvar circe-actions-handler-arguments nil
-  "TODO: unimplemented")
-  
-;; example usage? Sure!
-(defun circe-actions-message-contents (server-proc event fq-username channel contents)
-  (message contents))
-
-(defun circe-actions-lower-standards (server-proc event fq-username &rest IGNORE)
-  "Please respond."
-  (and (equal event "irc.message")
-       ;; no starts with? C'mon, emacs.
-       (equal fq-username "fsbot!~fsbot@unaffiliated/deego/bot/fsbot")))
 
 (defun circe-actions-panic ()
   "Iterate through circe-actions-handlers-alist, deactivating all the functions stored in the alist."
@@ -133,10 +120,35 @@ If persist is set, the procedure does not remove itself after being called once.
 	  circe-actions-handlers-alist)
   (message "All handlers cleared!"))
 
-;; (defvar circe-actions-arg-list '())
+;; -------------------- utility functions? Sure! --------------------
+
+(defun circe-actions-message-contents (server-proc event fq-username channel contents)
+  (message contents))
+
+(defun circe-actions-t (&rest IGNORE)
+  t)
+
+;; almost all of the below functions need lexical binding enabled.
+(defun circe-actions-wait-for (username)
+  "Return a proc that strictly compares the passed username. Use hippy-wait-for to get a function that uses an in-house version of starts-with"
+  (lambda (server-proc event fq-username &rest IGNORE)
+    (equal username fq-username)))
+
+(defun circe-actions-hippy-wait-for (username)
+  "Return a proc that tests if fq-username starts with username"
+  (let ((usr-str-len (length username)))
+    (lambda (server-proc event fq-username &rest IGNORE)
+      (string-equal (substring fq-username 0 usr-str-len) username))))
+  
+;; (defvar circe-actions-inspect-arg-list '()
+;;   "A list of variables passed to circe-actions-inspect-args.")
 ;; (defun circe-actions-inspect-args (&rest args)
-;;   "A utility function designed to show you what is passed to an arbitrary handler. Was very useful when inspecting, so I though I'd leave it in here."
-;;   (setq circe-actions-arg-list (cons args circe-actions-arg-list))
+;;   "A utility function designed to show you what is passed to an
+;;   arbitrary handler. Was very useful when inspecting, so I thought
+;;   I'd leave it in here. Be warned with 30+ channels
+;;   circe-actions-inspect-arg-list grows mighty fast, if you're crazy
+;;   like me and use circe-actions-t as a condition-function-p"
+;;   (setq circe-actions-inspect-arg-list (cons args circe-actions-inspect-arg-list))
 ;;   (message
 ;;    (with-temp-buffer
 ;;      (cl-prettyprint args)
