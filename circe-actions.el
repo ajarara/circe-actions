@@ -159,3 +159,4 @@ If persist is set, the procedure does not remove itself after being called once.
 ;;      )))
 
 (provide 'circe-actions)
+;;; circe-actions.el ends here
