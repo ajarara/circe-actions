@@ -27,7 +27,7 @@
 
 (defun circe-actions-generate-handler-function
     (condition-p-function action-function symbol event &optional persist)
-  "Produce a procedure aliased to a SYMBOL that executes
+  "Produce (and return) a procedure aliased to a SYMBOL that executes
   ACTION-FUNCTION when CONDITION-P-FUNCTION
 
 SYMBOL should be uninterned, but doesn't have to be.
@@ -37,7 +37,10 @@ if PERSIST is non-nil, do not remove the symbol from the handler
 obtained from circe-actions-handlers-alist, do not remove the handler
 from (circe-irc-handler-table), do not pass go.
 
-PERSIST is a dangerous flag to set. If you pass in an expensive condition or action, paired with a high occurence rate event, your emacs system will slow to a crawl, and the only way to deactivate it is through an interactive circe-actions-deactivate-function call.
+PERSIST is a dangerous flag to set. If you pass in an expensive
+condition or action, paired with a high occurence rate event, your
+emacs system will slow to a crawl, and the only way to deactivate it
+is through an interactive circe-actions-deactivate-function call.
 
 CONDITION-P-FUNCTION and ACTION-FUNCTION must be procedures with this
 argument signature:
@@ -87,7 +90,7 @@ place it at event in the hash-table obtained from circe's irc handler table."
 	(irc-handler-add (circe-irc-handler-table)
 			 event
 			 handler-function)))))
-			 
+
 (defun circe-actions--gensym ()
   (gensym "circe-actions-gensym-"))
 
@@ -154,3 +157,5 @@ If persist is set, the procedure does not remove itself after being called once.
 ;;      (cl-prettyprint args)
 ;;      (buffer-string)
 ;;      )))
+
+(provide 'circe-actions)

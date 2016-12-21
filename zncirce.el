@@ -20,9 +20,6 @@
 (defun zncirce-from-controlpanelp (server-proc event fq-username channel contents)
   (equal fq-username "*controlpanel!znc@znc.in"))
 
-(defun zncirce-message-contents (server-proc event fq-username channel contents)
-  (message contents))
-
 (defun zncirce-get-buffer-for-chan (buf &optional arg)
     "Query *controlpanel for the buffer variable for a specific channel
   (how many lines of chat to playback upon reconnection to ZNC) for a
@@ -36,8 +33,8 @@
   (interactive "b\np")
   (let ((circe-callback-func
 	 (lambda ()
-	   (circe-actions-register 'zncirce-from-controlpanelp
-				'zncirce-message-contents
+	   (circe-actions-register (circe-actions-hippy-wait-for "*controlpanel")
+				'circe-actions-message-contents
 				"irc.message"))))
     (if (= arg 4)
 	;; arg is set, set variable for the channel.
@@ -75,3 +72,5 @@
   (circe-command-MSG "*status"
 		     "SaveConfig"))
 			  
+
+(provide 'zncirce)
