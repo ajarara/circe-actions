@@ -1,10 +1,11 @@
 * circe-actions.el
 ** What is circe?
-[[https://github.com/jorgenschaefer/circe][Circe]] is an IRC client for emacs sporting what most would call sane defaults. It has lots of features, not least of which is the ability to run arbitrary elisp code on many events. 
+[[https://github.com/jorgenschaefer/circe][Circe]] is an IRC client for emacs sporting what most would call sane defaults. It has lots of features, not least of which is the ability to run arbitrary elisp code on many events.
 
-_Hmm. Is it necessary to have a condition-p-function seperate from the action-function? Shouldn't the user decide?_
+** What is circe-actions?
+A convenient interface to building functions to put on circe's event table.
 
-circe-actions-register, the main entrypoint to this package takes 3 arguments:
+Most use cases call for circe-actions-register. This function asks for 3 arguments (and an optional one). Usage is as follows:
 
 #+BEGIN_SRC emacs-lisp
   (circe-actions-register (circe-actions-hippy-wait-for "alphor")
@@ -12,7 +13,9 @@ circe-actions-register, the main entrypoint to this package takes 3 arguments:
                           "irc.message")
 #+END_SRC
 
-Now the next time anyone mentions this debonair nick, you're notified of the contents. Want this to persist? Just set the persist flag:
+The first 
+
+Now the next time anyone mentions this debonair nick, you're notified of the contents. Want this to persist? Just set the persist flag
 
 #+BEGIN_SRC emacs-lisp
   (circe-actions-register (circe-actions-hippy-wait-for "alphor")

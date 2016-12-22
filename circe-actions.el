@@ -52,12 +52,12 @@ fq-username - the username followed by cloak in whois format
 channel - channel or, if channel is your nick, a query
 contents - text payload of the event"
   (defalias symbol
-    (lambda (server-proc event fq-username channel contents)
-      (let ((args (list server-proc event fq-username channel contents)))
+    (lambda (server-proc event &rest rest-args)
+      (let ((args (cons 'server-proc (cons 'event rest-args))))
 	(when (apply condition-p-function args)
-	  (apply action-function args)
 	  (unless persist
-	    (circe-actions-deactivate-function symbol event)))))))
+	    (circe-actions-deactivate-function symbol event))
+          (apply action-function args))))))
 
 (defun circe-actions-deactivate-function (handler-function event)
   "Remove HANDLER-FUNCTION from EVENT bucket in circe-irc-handler-table, and remove it from the alist, in that order."
