@@ -9,7 +9,7 @@
   "Convenient interface to circe events"
   :group 'convenience)
 
-(defcustom circe-actions-maximum-handlers 1
+(defcustom circe-actions-maximum-handlers 3
   "Do not allow this many active handlers. This number is compared against
    circe-actions-handlers-alist's length. Once it is greater than or equal to
    the length of the alist, ignore any requests to add more to the
@@ -17,13 +17,14 @@
   :group 'circe-actions
   :type 'integer)
 
-(defvar circe-actions-handlers-alist
-  '()
+(defvar circe-actions-handlers-alist '()
   "Store all the symbols of the generated event handlers here. The symbols assigned to any circe-action should be uninterned so that they do not pollute the function namespace (as an arbitrary number are generated)
 
  The values corresponding to the symbols are the handlers they are on.")
 
-  
+;; circe-actions-generate-handler-function returns functions that are
+;; primarily designed to deal with irc.message-like events (irc.ctcp
+;; is also included). Later on it may be necessary to change this.
 
 (defun circe-actions-generate-handler-function
     (condition-p-function action-function symbol event &optional persist)
@@ -80,7 +81,7 @@ circe-actions-handlers-alist (with a key of symbol and HANDLER), then
 place it at event in the hash-table obtained from circe's irc handler table."
   (let ((alist-len (length circe-actions-handlers-alist)))
     (if (>= alist-len circe-actions-maximum-handlers)
-	(message "circe-actions: Handler tolerance of %s exceeded, nothing added to %s! Run M-x circe-actions-inspect (unimplemented)" alist-len event)
+	(message "circe-actions: Handler tolerance of %s exceeded, nothing added to %s! Change " alist-len event)
       (progn
 	;; add the handler-function to the list
 	(setq circe-actions-handlers-alist
@@ -101,8 +102,7 @@ place it at event in the hash-table obtained from circe's irc handler table."
 2) place it and its associated event on circe-actions-handlers-alist
 3) place it on the bucket corresponding to event in (circe-irc-handler-table)
 
-If persist is set, the procedure does not remove itself after being called once. This is potentially very dangerous if your condition function is computationally expensive (or, y'know, monetarily expensive). Be careful!
-"
+If persist is set, the procedure does not remove itself after being called once. This is potentially very dangerous if your condition function is computationally expensive (or, y'know, monetarily expensive). Be careful!"
   (let* ((arg-list (append (list condition-p-function
 				 action-function
 				 (circe-actions--gensym)
@@ -129,22 +129,32 @@ If persist is set, the procedure does not remove itself after being called once.
   (message contents))
 
 (defun circe-actions-t (&rest IGNORE)
+  "Use this as a condition if you want the action to always occur on event"
   t)
 
-;; almost all of the below functions need lexical binding enabled.
+;; all of the below functions need lexical binding enabled.
 (defun circe-actions-wait-for (username)
-  "Return a proc that strictly compares the passed username. Use hippy-wait-for to get a function that uses an in-house version of starts-with"
+  "Return a proc that strictly compares the passed username. Use hippy-wait-for to get a function that uses string-prefix-p"
   (lambda (server-proc event fq-username &rest IGNORE)
-    (equal username fq-username)))
+    (string-equal username fq-username)))
 
 (defun circe-actions-hippy-wait-for (username)
   "Return a proc that tests if fq-username starts with username"
-  (let ((usr-str-len (length username)))
-    (lambda (server-proc event fq-username &rest IGNORE)
-      (string-equal (substring fq-username 0 usr-str-len) username))))
+  (lambda (server-proc event fq-username &rest IGNORE)
+    (string-prefix-p username fq-username)))
   
+(defun circe-actions-sent-to (target)
+  "Return a proc that tests if the target of an event is sent to channel or user"
+  (lambda (server-proc event fq-username channel &rest IGNORE)
+    (string-equal channel target)))
+
+(defun circe-actions-hippy-sent-to (target)
+  (lambda (server-proc event fq-username channel &rest IGNORE)
+    (string-prefix-p target channel)))
+    
+;; unimplemented parts of the package
 ;; (defvar circe-actions-inspect-arg-list '()
-;;   "A list of variables passed to circe-actions-inspect-args.")
+;;   "A list of variables that were passed to circe-actions-inspect-args.")
 ;; (defun circe-actions-inspect-args (&rest args)
 ;;   "A utility function designed to show you what is passed to an
 ;;   arbitrary handler. Was very useful when inspecting, so I thought
