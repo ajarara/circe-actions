@@ -10,10 +10,11 @@
   :group 'convenience)
 
 (defcustom circe-actions-maximum-handlers 3
-  "Do not allow this many active handlers. This number is compared against
-   circe-actions-handlers-alist's length. Once it is greater than or equal to
-   the length of the alist, ignore any requests to add more to the
-   queue, instead alert the user with a message."
+  "Do not allow more than this many active handlers. This number is
+   compared against circe-actions-handlers-alist's length. Once it is
+   greater than or equal to the length of the alist, ignore any
+   requests to add more to the queue, instead alert the user with a
+   message."
   :group 'circe-actions
   :type 'integer)
 
@@ -25,6 +26,9 @@
 ;; circe-actions-generate-handler-function returns functions that are
 ;; primarily designed to deal with irc.message-like events (irc.ctcp
 ;; is also included). Later on it may be necessary to change this.
+
+(defconst circe-actions-version "0.0.1")
+  
 
 (defun circe-actions-generate-handler-function
     (condition-p-function action-function symbol event &optional persist)
@@ -53,7 +57,7 @@ channel - channel or, if channel is your nick, a query
 contents - text payload of the event"
   (defalias symbol
     (lambda (server-proc event &rest rest-args)
-      (let ((args (cons 'server-proc (cons 'event rest-args))))
+      (let ((args (cons server-proc (cons event rest-args))))
 	(when (apply condition-p-function args)
 	  (unless persist
 	    (circe-actions-deactivate-function symbol event))
@@ -96,7 +100,9 @@ place it at event in the hash-table obtained from circe's irc handler table."
   (gensym "circe-actions-gensym-"))
 
 (defun circe-actions-register (condition-p-function action-function event &optional persist)
-  "Given a CONDITION-P-FUNCTION and ACTION-FUNCTION that takes args consistent with the EVENT passed (as shown in the README, or consulting `circe-actions-handler-arguments'):
+  "Given a CONDITION-P-FUNCTION and ACTION-FUNCTION that takes args
+  consistent with the EVENT passed (as shown in the README, or
+  consulting `circe-actions-handler-arguments'):
 
 1) generate a procedure that executes ACTION-FUNCTION when CONDITION-P-FUNCTION
 2) place it and its associated event on circe-actions-handlers-alist
@@ -112,9 +118,21 @@ If persist is set, the procedure does not remove itself after being called once.
 				  arg-list)))
     (circe-actions-activate-function handler-function event)))
 
+(defun circe-actions-is-active-p (handler-function event)
+ (circe-actions-handler-is-on-alist-p handler-function event))
+
+(defun circe-actions-handler-is-on-alist-p (handler-function event)
+  (member (list handler-function event)
+	  circe-actions-handlers-alist))
+
+(defun circe-actions-handler-is-on-handler-table-p (handler-function event)
+  (memq handler-function
+	(gethash event (circe-irc-handler-table))))
 
 (defun circe-actions-panic ()
-  "Iterate through circe-actions-handlers-alist, deactivating all the functions stored in the alist."
+  "Iterate through circe-actions-handlers-alist, deactivating all the
+functions stored in the alist. This is the function you want to run if
+something is causing errors constantly"
   (interactive)
   (mapcar (lambda (handler-list)
 	    (let ((handler (car handler-list))
@@ -125,8 +143,11 @@ If persist is set, the procedure does not remove itself after being called once.
 
 ;; -------------------- utility functions? Sure! --------------------
 
-(defun circe-actions-message-contents (server-proc event fq-username channel contents)
+(defun circe-actions-irc-message-contents (server-proc event fq-username channel contents)
   (message contents))
+
+(defalias 'circe-actions-ctcp-message-payload
+  'circe-actions-irc-message-contents)
 
 (defun circe-actions-t (&rest IGNORE)
   "Use this as a condition if you want the action to always occur on event"
@@ -134,7 +155,8 @@ If persist is set, the procedure does not remove itself after being called once.
 
 ;; all of the below functions need lexical binding enabled.
 (defun circe-actions-wait-for (username)
-  "Return a proc that strictly compares the passed username. Use hippy-wait-for to get a function that uses string-prefix-p"
+  "Return a proc that strictly compares the passed username. Use
+hippy-wait-for to get a function that uses string-prefix-p"
   (lambda (server-proc event fq-username &rest IGNORE)
     (string-equal username fq-username)))
 
@@ -143,14 +165,17 @@ If persist is set, the procedure does not remove itself after being called once.
   (lambda (server-proc event fq-username &rest IGNORE)
     (string-prefix-p username fq-username)))
   
-(defun circe-actions-sent-to (target)
-  "Return a proc that tests if the target of an event is sent to channel or user"
+(defun circe-actions-sent-to (channel-or-user)
+  "Return a proc that tests if the target of an event is sent to
+CHANNEL-OR-USER"
   (lambda (server-proc event fq-username channel &rest IGNORE)
-    (string-equal channel target)))
+    (string-equal channel-or-user channel)))
 
-(defun circe-actions-hippy-sent-to (target)
+(defun circe-actions-hippy-sent-to (channel-or-user)
+  "Return a proc that tests if the target of some event is directed at
+an entity that starts with CHANNEL-OR-USER"
   (lambda (server-proc event fq-username channel &rest IGNORE)
-    (string-prefix-p target channel)))
+    (string-prefix-p channel-or-user channel)))
     
 ;; unimplemented parts of the package
 ;; (defvar circe-actions-inspect-arg-list '()
