@@ -11,7 +11,10 @@
   "Set of commands to inspect and modify ZNC parameters on the fly"
   :group 'convenience)
 
-;; There isn't a module to get the server you are querying on. Unfortunate. IDK how to parameterize it.
+;; There isn't a module to get the network you are querying
+;; on. Unfortunate. IDK how to parameterize it.  znc seems to have
+;; added a $network parameter to allow you to do this, but it's
+;; a relatively new addition. In any case...
 (defvar zncirce-server-name
   (lambda ()
     "freenode")

@@ -119,14 +119,15 @@ If persist is set, the procedure does not remove itself after being called once.
     (circe-actions-activate-function handler-function event)))
 
 (defun circe-actions-is-active-p (handler-function event)
- (circe-actions-handler-is-on-alist-p handler-function event))
+  (and (circe-actions-handler-is-on-handler-table-p handler-function event)
+       (circe-actions-handler-is-on-alist-p handler-function event)))
 
 (defun circe-actions-handler-is-on-alist-p (handler-function event)
   (member (list handler-function event)
 	  circe-actions-handlers-alist))
 
 (defun circe-actions-handler-is-on-handler-table-p (handler-function event)
-  (memq handler-function
+  (member handler-function
 	(gethash event (circe-irc-handler-table))))
 
 (defun circe-actions-panic ()
@@ -153,25 +154,28 @@ something is causing errors constantly"
   "Use this as a condition if you want the action to always occur on event"
   t)
 
+;; -------------------- predicate functions --------------------
+
 ;; all of the below functions need lexical binding enabled.
 (defun circe-actions-wait-for (username)
   "Return a proc that strictly compares the passed username. Use
-hippy-wait-for to get a function that uses string-prefix-p"
+circe-actions-hippie-wait-for to get a function that uses
+string-prefix-p"
   (lambda (server-proc event fq-username &rest IGNORE)
     (string-equal username fq-username)))
 
-(defun circe-actions-hippy-wait-for (username)
+(defun circe-actions-hippie-wait-for (username)
   "Return a proc that tests if fq-username starts with username"
   (lambda (server-proc event fq-username &rest IGNORE)
     (string-prefix-p username fq-username)))
   
 (defun circe-actions-sent-to (channel-or-user)
   "Return a proc that tests if the target of an event is sent to
-CHANNEL-OR-USER"
+CHANNEL-OR-USER. Use circe-actions-hippie-sent-to "
   (lambda (server-proc event fq-username channel &rest IGNORE)
     (string-equal channel-or-user channel)))
 
-(defun circe-actions-hippy-sent-to (channel-or-user)
+(defun circe-actions-hippie-sent-to (channel-or-user)
   "Return a proc that tests if the target of some event is directed at
 an entity that starts with CHANNEL-OR-USER"
   (lambda (server-proc event fq-username channel &rest IGNORE)
