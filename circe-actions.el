@@ -157,27 +157,31 @@ something is causing errors constantly"
 ;; -------------------- predicate functions --------------------
 
 ;; all of the below functions need lexical binding enabled.
-(defun circe-actions-wait-for (username)
-  "Return a proc that strictly compares the passed username. Use
-circe-actions-hippie-wait-for to get a function that uses
-string-prefix-p"
-  (lambda (server-proc event fq-username &rest IGNORE)
-    (string-equal username fq-username)))
+(defun circe-actions-is-from-p (sender)
+  "Return a condition-func appropriate for circe-actions-register that
+strictly compares the username behind the event with SENDER. 
 
-(defun circe-actions-hippie-wait-for (username)
-  "Return a proc that tests if fq-username starts with username"
+For a condition-func that uses string-prefix-p, use
+circe-actions-hippie-is-from-p"
   (lambda (server-proc event fq-username &rest IGNORE)
-    (string-prefix-p username fq-username)))
+    (string-equal sender fq-username)))
+
+(defun circe-actions-hippie-is-from-p (sender)
+  "Return a condition-func appropriate for circe-actions-register that checks if the username behind the event starts with SENDER"
+  (lambda (server-proc event fq-username &rest IGNORE)
+    (string-prefix-p sender fq-username)))
   
-(defun circe-actions-sent-to (channel-or-user)
-  "Return a proc that tests if the target of an event is sent to
-CHANNEL-OR-USER. Use circe-actions-hippie-sent-to "
+(defun circe-actions-sent-to-p (channel-or-user)
+  "Return a condition-func appropriate for circe-actions-register that
+strictly compares if the target of an event is CHANNEL-OR-USER. 
+
+For a condition-func that uses string-prefix-p, use
+circe-actions-hippie-is-from-p"
   (lambda (server-proc event fq-username channel &rest IGNORE)
     (string-equal channel-or-user channel)))
 
 (defun circe-actions-hippie-sent-to (channel-or-user)
-  "Return a proc that tests if the target of some event is directed at
-an entity that starts with CHANNEL-OR-USER"
+  "Return a condition-func appropriate for circe-actions-register that checks if the target of an event starts with CHANNEL-OR-USER"
   (lambda (server-proc event fq-username channel &rest IGNORE)
     (string-prefix-p channel-or-user channel)))
     

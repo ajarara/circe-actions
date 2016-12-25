@@ -32,7 +32,6 @@ Now this happens for the rest of your session!
 
 #+END_SRC
 
-
 * ZNCirce
 A suite of functions that interface with ZNC's various modules accessible by private message (eg, "/msg *status help").
 
