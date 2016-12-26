@@ -1,8 +1,7 @@
 
-;; ert
 (require 'ert)
-
 (require 'circe-actions)
+(require 'subr-x) ; necessary for hash-table-keys, it's built in.
 
 ;; all tests are of the form (should EXPECTED ACTUAL)
 
@@ -32,7 +31,7 @@
 
 (ert-deftest circe-actions-version-test ()
   "Check that we're testing the correct version"
-  (should (equal "0.0.1" circe-actions-version)))
+  (should (equal "0.0.11" circe-actions-version)))
 
 (ert-deftest circe-actions-t-test ()
   "Test circe-actions-t always returns t independent of the arguments"
@@ -290,8 +289,8 @@ Then, check it's not on the bucket anymore."
 	 ;; while we're here check deactivating the function works
 	 ;; regardless of persistence.
        
-	 ;; (circe-actions-deactivate-function some-sym event)
+	 (circe-actions-deactivate-function some-sym event)
 
 	 ;; ;; check it's no longer active
-	 ;; (should (null (circe-actions-is-active-p some-sym event)))
+	 (should (null (circe-actions-is-active-p some-sym event)))
       ))))

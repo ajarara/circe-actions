@@ -47,7 +47,6 @@ can also replace this sexp with: (lambda () \"$network\")
   (circe-actions-is-from-p "*status!znc@znc.in")
   "Return t if the event passed is sent from the controlpanel module")
 
-
 (defun zncirce-get-buffer-for-chan (buf &optional arg)
     "Query *controlpanel for the buffer variable for a specific channel
   (how many lines of chat to playback upon reconnection to ZNC) for a

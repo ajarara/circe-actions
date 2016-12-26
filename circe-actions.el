@@ -19,15 +19,18 @@
   :type 'integer)
 
 (defvar circe-actions-handlers-alist '()
-  "Store all the symbols of the generated event handlers here. The symbols assigned to any circe-action should be uninterned so that they do not pollute the function namespace (as an arbitrary number are generated)
+  "Store all the symbols of the generated event handlers here. The
+  symbols assigned to any circe-action should be uninterned so that
+  they do not pollute the function namespace (as an arbitrary number
+  are generated)
 
- The values corresponding to the symbols are the handlers they are on.")
+  The values corresponding to the symbols are the handlers they are on.")
 
 ;; circe-actions-generate-handler-function returns functions that are
 ;; primarily designed to deal with irc.message-like events (irc.ctcp
 ;; is also included). Later on it may be necessary to change this.
 
-(defconst circe-actions-version "0.0.1")
+(defconst circe-actions-version "0.0.11")
   
 
 (defun circe-actions-generate-handler-function
@@ -35,7 +38,8 @@
   "Produce (and return) a procedure aliased to a SYMBOL that executes
   ACTION-FUNCTION when CONDITION-P-FUNCTION
 
-SYMBOL should be uninterned, but doesn't have to be.
+SYMBOL should be uninterned, but doesn't have to be. This is not the
+same symbol passed to circe-actions-register.
 EVENT is a string key, like irc.message obtained from circe-irc-handler-table
 
 if PERSIST is non-nil, do not remove the symbol from the handler
@@ -116,6 +120,11 @@ If persist is set, the procedure does not remove itself after being called once.
 			   persist)) ; if unset, persist is nil, the empty list
 	 (handler-function (apply 'circe-actions-generate-handler-function
 				  arg-list)))
+    ;; to gain introspection, pass in condition function, activate function.
+    ;; then this allows us to add in the prin1-to-string forms to allow printing
+    ;; of the expressions so that we can inspect them while they are active.
+    ;; we can use this to deactivate them by symbol quickly
+    ;; possibly with completing-read, and a default value of our gensym.
     (circe-actions-activate-function handler-function event)))
 
 (defun circe-actions-is-active-p (handler-function event)
@@ -141,6 +150,9 @@ something is causing errors constantly"
 	      (circe-actions-deactivate-function handler event)))
 	  circe-actions-handlers-alist)
   (message "All handlers cleared!"))
+
+
+
 
 ;; -------------------- utility functions? Sure! --------------------
 
