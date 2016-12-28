@@ -192,7 +192,7 @@ circe-actions-hippie-is-from-p"
   (lambda (server-proc event fq-username channel &rest IGNORE)
     (string-equal channel-or-user channel)))
 
-(defun circe-actions-hippie-sent-to (channel-or-user)
+(defun circe-actions-hippie-sent-to-p (channel-or-user)
   "Return a condition-func appropriate for circe-actions-register that checks if the target of an event starts with CHANNEL-OR-USER"
   (lambda (server-proc event fq-username channel &rest IGNORE)
     (string-prefix-p channel-or-user channel)))

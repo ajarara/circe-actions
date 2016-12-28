@@ -5,33 +5,66 @@
 ** What is circe-actions?
 A convenient interface to building functions to put on circe's event table.
 
-Most use cases call for circe-actions-register. This function asks for 3 arguments (and an optional one). Usage is as follows:
+Most use cases call for circe-actions-register, which does almost all of the heavy lifting by generating the function for you, assigning it an uninterned symbol (i.e. one that won't show up in C-h f), and placing it on an alist and the event hook (really a hash table with events as keys). 
 
+This magical function asks for 3 arguments (and an optional one):
+
+*** Condition-p-function
+This parameter should be a procedure that will be passed arguments depending on the event. For example, any "irc.message" event passes 5 arguments to a function on the handler-table ([[#event-signatures][Event signatures]] describes known arguments for each event). When the procedure returns non-nil, the action-function is then called.
+
+*** Action-function
+This parameter should be a procedure that will be passed arguments in the exact same order as condition-p-function, and does whatever you want it to do.
+
+Whatever is returned from the action-function is returned from the whole generated function, but the "hook"-runner (irc-handler-run in irc.el) doesn't care about the return value.
+
+*** Event
+Should be a string. Look to [[#event-signatures][event signatures]] for descriptions of each of these events.
+
+*** Persist
+If persist is set, the procedure does not remove itself after being called once. This is potentially very dangerous if your condition function is computationally expensive (or, y'know, monetarily expensive). Be careful!
+
+Additionally, this can be used if you want to capture the next n events satisfying a specific criteria, as illustrated in [[#example-1][this example]]
+
+*** Example usage
+I want to capture the next time someone sends me a private message. You can use either PRIVMSG, or irc.message, both seem to be equivalent. First we need a condition function:
 #+BEGIN_SRC emacs-lisp
-  (circe-actions-register (circe-actions-hippy-wait-for "alphor")
-                          'circe-actions-message-contents
-                          "irc.message")
+  (defun you-talkin-to-me?-p (server-proc event fq-username channel contents)
+    (equal channel "alphor"))
 #+END_SRC
 
-The first 
+That's it! (Coincidentally this use case is probably pretty common, and so there are functions that make this considerably less verbose, take a look at circe-actions-sent-to-p and its liberal cousin, circe-actions-hippie-sent-to-p, which both implement closures to get you what you want).
 
-Now the next time anyone mentions this debonair nick, you're notified of the contents. Want this to persist? Just set the persist flag
-
+Then we need an action function. Using xfce4's notify-send, I can let myself know who sent me a message and what they said, even if emacs is not focused.
 #+BEGIN_SRC emacs-lisp
-  (circe-actions-register (circe-actions-hippy-wait-for "alphor")
-                          'circe-actions-message-contents
+  (defun who-said-what? (server-proc event fq-username channel contents)
+    (async-shell-command (concat fq-username " sent you: " contents)))
+#+END_SRC
+
+Finally it's a simple matter of registering it:
+ #+BEGIN_SRC emacs-lisp
+   (circe-actions-register 'you-talkin-to-me?-p
+                           'who-said-what?
+                           "irc.message")
+#+END_SRC
+
+This only happens once. If you want it to persist beyond the first time you-talkin-to-me?-p is satisfied, just set the persist flag, as such:
+#+BEGIN_SRC emacs-lisp
+  (circe-actions-register 'you-talkin-to-me?-p
+                          'who-said-what?
                           "irc.message"
                           t)
 #+END_SRC
 
 Now this happens for the rest of your session!
 
+*** Event signatures
+Parameters are passed in the order described.
+| Event name  | Description                     | Parameters                                         |
+| irc.message | Fired on every message or query | server-proc, event, fq-username, channel, contents |
 
 
-#+BEGIN_SRC emacs-lisp
-
-#+END_SRC
-
+*** Example 1
+TODO.
 * ZNCirce
 A suite of functions that interface with ZNC's various modules accessible by private message (eg, "/msg *status help").
 
