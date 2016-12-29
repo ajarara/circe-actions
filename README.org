@@ -25,19 +25,19 @@ If persist is set, the procedure does not remove itself after being called once.
 
 Additionally, this can be used if you want to capture the next n events satisfying a specific criteria, as illustrated in [[#example-1][this example]]
 
-*** Example usage
-I want to capture the next time someone sends me a private message. You can use either PRIVMSG, or irc.message, both seem to be equivalent. First we need a condition function:
+** Example usage
+Say I want to capture the next time someone sends me a private message. I can use either PRIVMSG, or irc.message, both seem to be equivalent. First we need a condition function:
 #+BEGIN_SRC emacs-lisp
   (defun you-talkin-to-me?-p (server-proc event fq-username channel contents)
     (equal channel "alphor"))
 #+END_SRC
 
-That's it! (Coincidentally this use case is probably pretty common, and so there are functions that make this considerably less verbose, take a look at circe-actions-sent-to-p and its liberal cousin, circe-actions-hippie-sent-to-p, which both implement closures to get you what you want).
+That's it! (Coincidentally this use case is probably pretty common, and so there are functions that make this considerably less verbose, take a look at circe-actions-sent-to-p and its liberal cousin, circe-actions-hippie-sent-to-p, which both implement closures to get you what you want. Usage in [[#utility-functions][utility functions]]).
 
 Then we need an action function. Using xfce4's notify-send, I can let myself know who sent me a message and what they said, even if emacs is not focused.
 #+BEGIN_SRC emacs-lisp
   (defun who-said-what? (server-proc event fq-username channel contents)
-    (async-shell-command (concat fq-username " sent you: " contents)))
+    (async-shell-command (concat "notify-alert " fq-username " sent you: " contents)))
 #+END_SRC
 
 Finally it's a simple matter of registering it:
@@ -57,53 +57,20 @@ This only happens once. If you want it to persist beyond the first time you-talk
 
 Now this happens for the rest of your session!
 
+** How this works
+Circe has an event handler table, a hash table accessed by a function called (circe-irc-handler-table), which is filled with different buckets, with events as values. When Circe becomes aware of the event, it runs whatever is in the bucket associated with the event (a list of functions with a specific signature, or the empty list). Then when each element of the list has ran, Circe does whatever it does to handle the event itself. If it encounters an error, though, then the event will not be fully handled by Circe! This can mean missed messages if you don't test your functions before registering them.
+
+Circe-actions handles all the bureaucracy of adding functions to this table, keeping track of them with circe-actions-handlers-alist and even providing functions to deactivate them (circe-actions-deactivate-function).
+
 *** Event signatures
 Parameters are passed in the order described.
 | Event name  | Description                     | Parameters                                         |
 | irc.message | Fired on every message or query | server-proc, event, fq-username, channel, contents |
 
 
-*** Example 1
-TODO.
-* ZNCirce
-A suite of functions that interface with ZNC's various modules accessible by private message (eg, "/msg *status help").
-
-This code requires circe, and invoking it assumes you are connected to a ZNC instance.
-** A brief overview
-ZNC is an IRC relay. Instead of connecting directly to a network, I have a server handle the connections for me on a VPS, which allows me numerous benefits:
-*** Context on rejoining a channel
-It always seems to be the case all the interesting discussion starts right before you join the channel. Without appropriate context it might take a bit of guessing before you can understand what is being discussed (or alternatively, wait for some new discussion topic or whatever). Why do this when we have the giant hammer of technology to smash our fly problems?
-
-ZNC allows you to have a buffer of lines kept that is played back to you when you join a channel. This is useful for two reasons: aforementioned context and an elimination of the need to have your computer connected to the internet 24/7. This is particularly invaluable when you are connected to a channel that has little discussion.
-*** Easy client-agnostic per channel configuration
-While I like having tons of channels open, I don't necessarily need all this information. Having 3000 lines of buffered content played back to me is overload. Instead, I'd like certain channels to be buffered a specific degree. There are two ways to do this, through the web administration module, and through the control panel module.
-
-The web administration module is just a webserver that requires you to log in and you can edit all sorts of things on a serverwide, userwide, or channelwide basis. ZNC has a remarkable degree of customization backed by great documentation.
-
-Unfortunately with the webadmin, you have to trade off convenience for security: it is enabled to listen on external interfaces. If someone has access to your ZNC password, they can impersonate you, and even get shell access. So I disabled it on external interfaces, instead requiring me to use SSH (mentioned again later)
-
-The controlpanel proves a much more convenient way to handle this configuration. But it is rather verbose to change on the fly. That is what this code aims to solve.
-
-** Todo
-*** (require 'circe)
-Or rather, figure out how to turn this into an eventual package for consumption using Cask and autoloads and whatnot. I know a lot of people use ZNC, and a lot of people use circe (and erc).
-*** Check if connected to a ZNC instance 
-Is it important to check everytime a function runs or sufficient to check once per circe session?
-*** Split functionality of circe-actions and zncirce
-Circe-actions should provide an interface to (circe-irc-handler-table)
-This allows us to split functionality and hopefully use our concepts when extended to ERC.
-
-*** Generating functions
-The way ZNCirce works is it first places an event handler in Circe's irc.message handler, using irc-handler-add (the internal representation is a hash table with irc.message as a key, and handlers as a list of functions)
-
-You can inspect this with (gethash "irc.message" (circe-irc-handler-table)) while in a circe buffer. It's an empty list. (fun fact, '() and nil are exactly alike once evaluated, and only serve as indicators as to what the behavior of the variable is.)
-
-In reality, handlers aren't all that expensive, but it likely is important to not pollute them, as they are all called everytime someone sends a message, which happens a lot once you have lots of channels open (I have 31).
-
-Any function on an irc.message handler (the only handler that is dealt with in this package) is called with the following arguments:
-
+Parameter description
 **** server-proc
-I'm honestly not sure. I can't really inspect this because elisp doesn't have any string-martialing. The source says (circe-server-process) when it passes to all these handlers, so it's highly likely, but I can't say it for sure.
+The circe-server-process providing the event.
 
 **** event
 In this case, "irc.message". Strange that this is included, but I could see a use case where you dispatch one function to many different handlers at once.
@@ -129,14 +96,57 @@ Where was it sent to? It can be a channel, but if it's a query/PM, then it's the
 
 **** contents
 What did the fq-username send us?
-*** 
+*** Example 1
+TODO
 
-So what we would like to do is generate functions that can handle these separately. For example, I'd like the ability to get the message back from *controlpanel and display it in the minibuffer, but I don't want to do it just for *controlpanel, I'd also like to do it with *status. The way we can do this is with macros generating functions that take these parameters as arguments. This allows us to generate an irc.message handler factory.
+*** Utility functions
 
-One problem is that it is difficult (probably impossible) to refer to generated functions from macro expressions without giving them symbols to later refer to them by. I didn't want to pollute the function space (I think it's called the obarray in elisp, but I might be wrong as it is a lisp-2). 
+**** Circe-actions-panic
+In the case that something is tripping the debugger 3 times a second, you'll probably want this. It iterates through the alist holding all the registered functions and removes them from the handler table (and the alist).
 
-Interning symbols?
-*** Dynamic binding?
+**** circe-actions-t
+In case you want to capture the next event unconditionally, you may be tempted to use t as a condition function. This won't work. Instead, you must wrap t in a lambda that takes in the correct number of arguments. circe-actions-t is exactly this.
+
+**** Lexically bound functions
+These are all functions that make it easy to devise condition functions without dealing with the rather large function signature needed. Once called, they will return an appropriate closure satisfying the condition you want.
+***** circe-actions-is-from-p
+Usage: (circe-actions-from-p "alphor!~floor13@2604:180:2::10")
+Returns true when the event was caused by the sender.
+
+Wait does this mean that you can only reliably target cloaks? Yes. This is more useful for ZNC, when you want to make absolutely sure you got the message from the right entity. But don't worry, my child:
+***** circe-actions-hippie-is-from-p
+Usage: (circe-actions-hippie-is-from-p "alphor!~")
+Does precisely what you think it does. If you make it too loose, then of course this will fire on events you don't really care about.
+***** circe-actions-sent-to-p
+Usage: (circe-actions-sent-to-p "alphor!~floor13@2604:140:76::5")
+Whoever the event is targeting. It can be a nick or a channel.
+***** circe-actions-hippie-sent-to-p
+Usage: (circe-actions-hippie-sent-to-p "alph")
+Does precisely what you think it does.
+
+* ZNCirce
+A suite of functions that interface with ZNC's various modules accessible by private message (eg, "/msg *status help").
+
+This code requires circe, and circe-actions (zncirce.el is little more than a wrapper around circe-actions), and invoking it assumes you are connected to a ZNC instance.
+
+** Usage
+*** zncirce-get-buffer-for-chan
+This does not get the emacs-lisp buffer, but instead displays the value of the buffer variable associated with a specific channel. The buffer variable with respect to ZNC is the number of lines played to you when you initially connect.
+*** zncirce-save-config
+After making changes, ZNC does not automatically save configuration (in case you make a customization that is rogue). If you're happy with the way ZNC behaves, this will save your configuration on the remote machine.
+
+** Todo
+*** Check if connected to a ZNC instance 
+Is it important to check everytime a function runs or sufficient to check once per circe session?
+*** Generating functions
+The way ZNCirce works is it first places an event handler in Circe's irc.message handler, using irc-handler-add (the internal representation is a hash table with irc.message as a key, and handlers as a list of functions)
+
+You can inspect this with (gethash "irc.message" (circe-irc-handler-table)) while in a circe buffer. It's an empty list. (fun fact, '() and nil are exactly alike once evaluated, and only serve as indicators as to what the behavior of the variable is.)
+
+In reality, handlers aren't all that expensive, but it likely is important to not pollute them, as they are all called everytime someone sends a message, which happens a lot once you have lots of channels open (I have 31).
+
+Any function on an irc.message handler (the only handler that is dealt with in this package) is called with the following arguments:
+
 
 *** ZNC's aversion to git
 ZNC sports a config file, but users are discouraged from editing it directly, instead being pointed to using the web admin panel. I've disabled the web admin panel pointing on public IP addresses (which funnily enough required me editing the config file by hand), only allowing those with SSH access to use it (using SSH tunneling to forward ports to localhost)
