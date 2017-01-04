@@ -14,7 +14,9 @@
 ;; There isn't a module to get the network you are querying
 ;; on. Unfortunate. IDK how to parameterize it.  znc seems to have
 ;; added a $network parameter to allow you to do this, but it's
-;; a relatively new addition. In any case, this will work if you foll
+;; a relatively new addition. In any case, this will work if you use
+;; the user field to instruct ZNC to connect to a specific
+;; network. The wiki explains this in the FAQ.
 (defvar zncirce-server-name-func
   (lambda ()
     (let ((nick-network (irc-connection-get (circe-server-process) :user)))
@@ -22,9 +24,10 @@
 	  
   "Assuming :user in circe-network-options follows the conventions
   laid forth in the ZNC wiki homepage: http://wiki.znc.in/ZNC This
-  will obtain your :user string. If you only use ZNC to connect to one
-  network, and so have no need for the suffix network string, simply
-  replace this with a procedure like so: (lambda () \"freenode\")
+  will obtain your :user string, and extract the relevant network
+  name. If you only use ZNC to connect to one network, and so have no
+  need for the suffix network string, simply replace this with a
+  procedure like so: (lambda () \"freenode\")
 
 Finally, if you are on a very new version of ZNC (as of 12/24/16), you
 can also replace this sexp with: (lambda () \"$network\")

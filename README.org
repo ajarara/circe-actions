@@ -75,6 +75,8 @@ The circe-server-process providing the event.
 **** event
 In this case, "irc.message". Strange that this is included, but I could see a use case where you dispatch one function to many different handlers at once.
 **** fq-username
+The fully qualified username:
+
 Not the nick, the nick and some address information, or the cloak (what you'd get from /whois, if you could /whois *status)
 
 ie 
@@ -88,16 +90,22 @@ fsbot is ~fsbot@unaffiliated/deego/bot/fsbot (The Free Software bot)
 
 What you get is a concatenation of these two strings (minus the description):
 
+#+BEGIN_SRC 
 fsbot!~fsbot@unaffiliated/deego/bot/fsbot
+#+END_SRC
 
-In our case, the modules we're interfacing look like *controlpanel!znc@znc.in
 **** channel
 Where was it sent to? It can be a channel, but if it's a query/PM, then it's the nick it was sent to (ie, yours).
 
 **** contents
 What did the fq-username send us?
 *** Example 1
-TODO
+Let's say we want to ignore the built-in deactivation mechanism of circe-actions. Instead, we'd like to listen for say 4 instances of something occurring, deactivating on the fifth:
+#+BEGIN_SRC emacs-lisp
+
+#+END_SRC
+
+
 
 *** Utility functions
 
@@ -123,8 +131,10 @@ Whoever the event is targeting. It can be a nick or a channel.
 ***** circe-actions-hippie-sent-to-p
 Usage: (circe-actions-hippie-sent-to-p "alph")
 Does precisely what you think it does.
+***** circe-actions-pass-then-deactivate
+This one is a little too niche to describe its usage immediately. Perhaps you want something in between a callback and a persistent action.
 
-* ZNCirce
+* ZNCirce.el
 A suite of functions that interface with ZNC's various modules accessible by private message (eg, "/msg *status help").
 
 This code requires circe, and circe-actions (zncirce.el is little more than a wrapper around circe-actions), and invoking it assumes you are connected to a ZNC instance.
@@ -132,21 +142,17 @@ This code requires circe, and circe-actions (zncirce.el is little more than a wr
 ** Usage
 *** zncirce-get-buffer-for-chan
 This does not get the emacs-lisp buffer, but instead displays the value of the buffer variable associated with a specific channel. The buffer variable with respect to ZNC is the number of lines played to you when you initially connect.
+
 *** zncirce-save-config
-After making changes, ZNC does not automatically save configuration (in case you make a customization that is rogue). If you're happy with the way ZNC behaves, this will save your configuration on the remote machine.
+After making changes, ZNC does not automatically save configuration (in case you make a customization that is rogue). If you're happy with the way ZNC behaves, this will save your configuration on the remote machine, making the config persist on reboot.
 
 ** Todo
 *** Check if connected to a ZNC instance 
 Is it important to check everytime a function runs or sufficient to check once per circe session?
-*** Generating functions
-The way ZNCirce works is it first places an event handler in Circe's irc.message handler, using irc-handler-add (the internal representation is a hash table with irc.message as a key, and handlers as a list of functions)
+*** Generalized *controlpanel interface
+IE: zncirce-setchan would prompt for a buffer, then a variable, and based on that, prompt for either a string, integer, or boolean, and send them to *controlpanel.
 
-You can inspect this with (gethash "irc.message" (circe-irc-handler-table)) while in a circe buffer. It's an empty list. (fun fact, '() and nil are exactly alike once evaluated, and only serve as indicators as to what the behavior of the variable is.)
-
-In reality, handlers aren't all that expensive, but it likely is important to not pollute them, as they are all called everytime someone sends a message, which happens a lot once you have lots of channels open (I have 31).
-
-Any function on an irc.message handler (the only handler that is dealt with in this package) is called with the following arguments:
-
+There is a small problem with this. There are lots of variables at each level, and it probably varies completely across ZNC versions. I could start with a default set, and have a utility function that runs obtaining the help info, saving the values as a tuple (or just the differences).
 
 *** ZNC's aversion to git
 ZNC sports a config file, but users are discouraged from editing it directly, instead being pointed to using the web admin panel. I've disabled the web admin panel pointing on public IP addresses (which funnily enough required me editing the config file by hand), only allowing those with SSH access to use it (using SSH tunneling to forward ports to localhost)
@@ -154,7 +160,7 @@ ZNC sports a config file, but users are discouraged from editing it directly, in
 Unfortunately, this means that any configuration I make towards ZNC is not reproducible. Unless, I have some way to get that configuration file, and put it into version control. There are two ways I'm thinking of doing this:
 
 **** Remote git
-ZNC sports a commandline interface for administrators to use. This is kind of scary, specifically because I don't change my IRC password /that/ often and I know someone even mildly security oriented is already reading this with wide eyes.
+ZNC sports a commandline interface for administrators to use. This is kind of scary, specifically because I don't change my IRC password /that/ often and I know someone even mildly security oriented is already shaking their head.
 
 The gist of it is that I put the git repository in the server holding the config file, and use some git transport mechanism (likely either through circe or ssh) to clone the repo locally.
 
@@ -167,14 +173,14 @@ I really don't want the commandline interface to be enabled, it's far too large 
 Further, it's complicated. I'd need to have some way to transport commit messages (or auto generate them, but that is useless when it comes to diagnostics), then some way to get the repo over here (without cloning it to some external git repo, as this contains plaintext passwords).
 
 **** Write a module that retrieves the file and returns it over IRC
-This is less disastrous. I don't need git to exist on the remote server, and don't need anything besides the ability to retrieve a single file (the only goodies of the file are the irc passwords, which you would already have access to if you know my ZNC password)
+This is less disastrous. I don't need git to exist on the remote server, and don't need anything besides the ability to retrieve a single file (the only goodies of the file are the irc passwords, which you would already have access to if you know the ZNC admin password)
 
 ***** Pros
 MUCH less security risk
 Modules can be written in Python, which I am familiar with
 
 ***** Cons
-None. Ha!
+More time investment.
 
 
 
