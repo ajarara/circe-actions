@@ -5,7 +5,7 @@
 ** What is circe-actions?
 A convenient interface to building functions to put on circe's event table.
 
-Most use cases call for circe-actions-register, which does almost all of the heavy lifting by generating the function for you, assigning it an uninterned symbol (i.e. one that won't show up in C-h f), and placing it on an alist and the event hook (really a hash table with events as keys). 
+Most use cases call for circe-actions-register, which does almost all of the heavy lifting by generating the function for you, assigning it an uninterned symbol (i.e. one that won't pollute the function namespace), and placing it on an alist and the event hook (really a hash table with events as keys). 
 
 This magical function asks for 3 arguments (and an optional one):
 
@@ -18,7 +18,7 @@ This parameter should be a procedure that will be passed arguments in the exact 
 Whatever is returned from the action-function is returned from the whole generated function, but the "hook"-runner (irc-handler-run in irc.el) doesn't care about the return value.
 
 *** Event
-Should be a string. Look to [[#event-signatures][event signatures]] for descriptions of each of these events.
+Should be the string associated with the event. Look to [[#event-signatures][event signatures]] for descriptions of each of these events.
 
 *** Persist
 If persist is set, the procedure does not remove itself after being called once. This is potentially very dangerous if your condition function is computationally expensive (or, y'know, monetarily expensive). Be careful!
@@ -32,12 +32,12 @@ Say I want to capture the next time someone sends me a private message. I can us
     (equal channel "alphor"))
 #+END_SRC
 
-That's it! (Coincidentally this use case is probably pretty common, and so there are functions that make this considerably less verbose, take a look at circe-actions-sent-to-p and its liberal cousin, circe-actions-hippie-sent-to-p, which both implement closures to get you what you want. Usage in [[#utility-functions][utility functions]]).
+That's it! (Coincidentally this use case is probably pretty common, and so there are functions that make this considerably less verbose, take a look at circe-actions-sent-to-p and its liberal cousin, circe-actions-hippie-sent-to-p, which both make use of closures to get you what you want. Usage in [[#utility-functions][utility functions]]).
 
 Then we need an action function. Using xfce4's notify-send, I can let myself know who sent me a message and what they said, even if emacs is not focused.
 #+BEGIN_SRC emacs-lisp
   (defun who-said-what? (server-proc event fq-username channel contents)
-    (async-shell-command (concat "notify-alert " fq-username " sent you: " contents)))
+    (async-shell-command (concat "notify-send " "\"" fq-username " sent you: " contents "\"")))
 #+END_SRC
 
 Finally it's a simple matter of registering it:
@@ -192,6 +192,8 @@ Is it important to check everytime a function runs or sufficient to check once p
 IE: zncirce-setchan would prompt for a buffer, then a variable, and based on that, prompt for either a string, integer, or boolean, and send them to *controlpanel.
 
 There is a small problem with this. There are lots of variables at each level, and it probably varies completely across ZNC versions. I could start with a default set, and have a utility function that runs obtaining the help info, saving the values as a tuple (or just the differences).
+*** Fix % bug in circe-actions-message-contents
+If you don't want to format the string, (message "%s" VALUE). This avoids any bugs if someone sends a message with % in it.
 
 *** ZNC's aversion to git
 ZNC sports a config file, but users are discouraged from editing it directly, instead being pointed to using the web admin panel. I've disabled the web admin panel pointing on public IP addresses (which funnily enough required me editing the config file by hand), only allowing those with SSH access to use it (using SSH tunneling to forward ports to localhost)
