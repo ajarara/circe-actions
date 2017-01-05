@@ -23,7 +23,7 @@ Should be a string. Look to [[#event-signatures][event signatures]] for descript
 *** Persist
 If persist is set, the procedure does not remove itself after being called once. This is potentially very dangerous if your condition function is computationally expensive (or, y'know, monetarily expensive). Be careful!
 
-Additionally, this can be used if you want to capture the next n events satisfying a specific criteria, as illustrated in [[#example-1][this example]]
+Additionally, this can be used if you want to capture the next n events satisfying a specific criteria, handling the dectivation yourself, as illustrated in [[#capture-n-things-then-quit][this example]
 
 ** Example usage
 Say I want to capture the next time someone sends me a private message. I can use either PRIVMSG, or irc.message, both seem to be equivalent. First we need a condition function:
@@ -99,12 +99,51 @@ Where was it sent to? It can be a channel, but if it's a query/PM, then it's the
 
 **** contents
 What did the fq-username send us?
-*** Example 1
-Let's say we want to ignore the built-in deactivation mechanism of circe-actions. Instead, we'd like to listen for say 4 instances of something occurring, deactivating on the fifth:
-#+BEGIN_SRC emacs-lisp
 
+*** Lower level registration
+This is useful if we want to control how the function deactivates itself, especially if our use case doesn't really follow a callback style.
+
+The only thing we have to keep in mind is that if we don't use circe-actions-register, we have to handle the deactivation step within the function (unless we don't want to deactivate the function, of course).
+#+BEGIN_SRC emacs-lisp
+  ;; we need closures to illustrate this example without descending into madness
+  (setq lexical-binding t)
+  (setq function-symbol (gensym "arbitrary-"))
+
+  (defun message-five-times-then-quit ()
+    (defalias function-symbol ; function-symbol is evaluated to get the symbol generated above
+      (let ((count 0)) ; we increment this each time the lambda is called.
+
+        (lambda (&rest arglist)
+          (if (< count 5) ; condition function
+              (let ((message-var (nth 4 arglist)))
+                (setq count (1+ count))
+                (message message-var)) ; action function
+            (circe-actions-deactivate-function function-symbol "irc.message"))))))
+              
+
+  (circe-actions-activate-function (message-five-times-then-quit) ; return a new closure
+                                   "irc.message")  
 #+END_SRC
 
+Of course if you want to bind all this to a key you could wrap all of it in an interactive function, like so:
+#+BEGIN_SRC emacs-lisp
+  (setq lexical-binding t)
+
+  (defun message-five-times-then-quit ()
+    (interactive)
+    (let ((function-symbol (gensym "arbitrary-"))
+          (event "irc.message")) ; might as well parameterize it here
+      (defalias function-symbol
+        (let ((count 0))
+          (lambda (&rest arglist)
+            (if (< count 5) ; condition function
+                (let ((message-var (nth 4 arglist)))
+                  (setq count (1+ count))
+                  (message message-var)) ; action-function
+              (circe-actions-deactivate-function function-symbol event)))))
+      (circe-actions-activate-function function-symbol event)))
+
+#+END_SRC
 
 
 *** Utility functions

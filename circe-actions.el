@@ -30,7 +30,7 @@
 ;; primarily designed to deal with irc.message-like events (irc.ctcp
 ;; is also included). Later on it may be necessary to change this.
 
-(defconst circe-actions-version "0.0.11")
+(defconst circe-actions-version "0.0.12")
   
 
 (defun circe-actions-generate-handler-function
