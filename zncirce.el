@@ -64,7 +64,7 @@ can also replace this sexp with: (lambda () \"$network\")
   (let ((circe-callback-func
 	 (lambda ()
 	   (circe-actions-register 'zncirce-from-controlpanel-p
-				'circe-actions-message-contents
+				'circe-actions-irc-message-contents
 				"irc.message"))))
     (if (= arg 4)
 	;; arg is set, set variable for the channel.
@@ -95,7 +95,7 @@ can also replace this sexp with: (lambda () \"$network\")
 (defun zncirce-save-config ()
   (interactive)
   (circe-actions-register 'zncirce-from-status-p
-			  'circe-actions-message-contents
+			  'circe-actions-irc-message-contents
 			  "irc.message")
   (circe-command-MSG "*status"
 		     "SaveConfig"))
