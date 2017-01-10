@@ -31,7 +31,7 @@
 
 (ert-deftest circe-actions-version-test ()
   "Check that we're testing the correct version"
-  (should (equal "0.0.12" circe-actions-version)))
+  (should (equal "0.0.13" circe-actions-version)))
 
 (ert-deftest circe-actions-t-test ()
   "Test circe-actions-t always returns t independent of the arguments"

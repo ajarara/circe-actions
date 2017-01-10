@@ -30,7 +30,7 @@
 ;; primarily designed to deal with irc.message-like events (irc.ctcp
 ;; is also included). Later on it may be necessary to change this.
 
-(defconst circe-actions-version "0.0.12")
+(defconst circe-actions-version "0.0.13")
   
 
 (defun circe-actions-generate-handler-function
@@ -196,7 +196,18 @@ circe-actions-hippie-is-from-p"
   "Return a condition-func appropriate for circe-actions-register that checks if the target of an event starts with CHANNEL-OR-USER"
   (lambda (server-proc event fq-username channel &rest IGNORE)
     (string-prefix-p channel-or-user channel)))
-    
+
+;;;###autoload
+(defun enable-circe-actions ()
+  (interactive)
+  nil)
+
+;;;###autoload
+(defun disable-circe-actions ()
+  (interactive)
+  ;; there really isn't anything else to do besides killing the handlers
+  (circe-actions-panic))
+
 ;; unimplemented parts of the package
 ;; (defvar circe-actions-inspect-arg-list '()
 ;;   "A list of variables that were passed to circe-actions-inspect-args.")
