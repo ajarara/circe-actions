@@ -3,9 +3,9 @@
 [[https://github.com/jorgenschaefer/circe][Circe]] is an IRC client for emacs sporting what most would call sane defaults. It has lots of features, not least of which is the ability to run arbitrary elisp code on many events.
 
 ** What is circe-actions?
-A convenient interface to building functions to put on circe's event table.
+A convenient interface to building callback-style functions to handle events emitted by circe.
 
-Most use cases call for circe-actions-register, which does almost all of the heavy lifting by generating the function for you, assigning it an uninterned symbol (i.e. one that won't pollute the function namespace), and placing it on an alist and the event hook (really a hash table with events as keys). 
+Most use cases call for circe-actions-register, which does almost all of the heavy lifting by generating the function for you, assigning it an uninterned symbol (i.e. one that won't pollute the function namespace), and placing it on an alist and the associated event hook (a hash table with events as keys), which circe calls as it handles events itself.
 
 This magical function asks for 3 arguments (and an optional one):
 
@@ -121,7 +121,7 @@ The only thing we have to keep in mind is that if we don't use circe-actions-reg
             (circe-actions-deactivate-function function-symbol "irc.message"))))))
               
 
-  (circe-actions-activate-function (message-five-times-then-quit) ; return a new closure
+  (circe-actions-activate-function (message-five-times-then-quit) ; return a new independent closure
                                    "irc.message")  
 #+END_SRC
 
@@ -149,27 +149,38 @@ Of course if you want to bind all this to a key you could wrap all of it in an i
 *** Utility functions
 
 **** Circe-actions-panic
-In the case that something is tripping the debugger 3 times a second, you'll probably want this. It iterates through the alist holding all the registered functions and removes them from the handler table (and the alist).
+In the case that something is tripping the debugger 3 times a second, you'll probably want this. It iterates through the alist holding all the registered functions and removes them from the handler table (and the alist). This function is also called when you call M-x disable-circe-actions.
 
 **** circe-actions-t
 In case you want to capture the next event unconditionally, you may be tempted to use t as a condition function. This won't work. Instead, you must wrap t in a lambda that takes in the correct number of arguments. circe-actions-t is exactly this.
 
 **** Lexically bound functions
 These are all functions that make it easy to devise condition functions without dealing with the rather large function signature needed. Once called, they will return an appropriate closure satisfying the condition you want.
+
+***** Important!
+These /return/ functions to be used as predicates, they are not predicates themselves. The whole point is so that you don't have to set up lexical binding in your init file to make these closures without resorting to dynamically scoped alists if you don't want to. 
+
 ***** circe-actions-is-from-p
 Usage: (circe-actions-from-p "alphor!~floor13@2604:180:2::10")
-Returns true when the event was caused by the sender.
+
+Returns a closure that when evaluated with the right arguments, returns true when the event was caused by "alphor!~floor13@2604:180:2::10".
 
 Wait does this mean that you can only reliably target cloaks? Yes. This is more useful for ZNC, when you want to make absolutely sure you got the message from the right entity. But don't worry, my child:
+
 ***** circe-actions-hippie-is-from-p
 Usage: (circe-actions-hippie-is-from-p "alphor!~")
-Does precisely what you think it does. If you make it too loose, then of course this will fire on events you don't really care about.
+
+Returns a closure that when evaluated with the right arguments, returns true when the event caused by the sender starts with "alphor!~"
+
 ***** circe-actions-sent-to-p
 Usage: (circe-actions-sent-to-p "alphor!~floor13@2604:140:76::5")
-Whoever the event is targeting. It can be a nick or a channel.
+
+Returns a closure that when evaluated with the right arguments, returns true when the event is targeted at "alphor!~floor13@2604:140:76::5"
+
 ***** circe-actions-hippie-sent-to-p
 Usage: (circe-actions-hippie-sent-to-p "alph")
-Does precisely what you think it does.
+
+Returns a closure that when evaluated with the right arguments, 
 ***** circe-actions-pass-then-deactivate
 This one is a little too niche to describe its usage immediately. Perhaps you want something in between a callback and a persistent action.
 
@@ -180,57 +191,7 @@ This code requires circe, and circe-actions (zncirce.el is little more than a wr
 
 ** Usage
 *** zncirce-get-buffer-for-chan
-This does not get the emacs-lisp buffer, but instead displays the value of the buffer variable associated with a specific channel. The buffer variable with respect to ZNC is the number of lines played to you when you initially connect.
+This does not get the emacs-lisp buffer, but instead displays the value of the buffer variable associated with a specific channel. The buffer variable with respect to ZNC is the number of lines played to you when you initially connect. Keep these numbers conservative! Emacs doesn't respond well when it is handling 1000s of lines being played back to it.
 
 *** zncirce-save-config
 After making changes, ZNC does not automatically save configuration (in case you make a customization that is rogue). If you're happy with the way ZNC behaves, this will save your configuration on the remote machine, making the config persist on reboot.
-
-** Todo
-
-*** Tests!
-Should be implemented with Buttercup, I think. Testing interactively with ERT is a pain, I've already had to build my own mock functions (that don't accurately reflect the actual environment. I'd much rather have the ability to call the real functions in a mock environment. ERT has no easy facility to do this.)
-
-Further, it would probably be a good idea to move some of the ert tests in circe-actions to buttercup as well. 
-*** Check if connected to a ZNC instance 
-Is it important to check everytime a function runs or sufficient to check once per circe session?
-*** Generalized *controlpanel interface
-IE: zncirce-setchan would prompt for a buffer, then a variable, and based on that, prompt for either a string, integer, or boolean, and send them to *controlpanel.
-
-There is a small problem with this. There are lots of variables at each level, and it probably varies completely across ZNC versions. I could start with a default set, and have a utility function that runs obtaining the help info, saving the values as a tuple (or just the differences).
-
-Something that is likely useful is a reader that does the above, for an arbitrary *module. 
-*** Fix % bug in circe-actions-message-contents
-If you don't want to format the string, (message "%s" VALUE). This avoids any bugs if someone sends a message with % in it.
-
-*** ZNC's aversion to git
-ZNC sports a config file, but users are discouraged from editing it directly, instead being pointed to using the web admin panel. I've disabled the web admin panel pointing on public IP addresses (which funnily enough required me editing the config file by hand), only allowing those with SSH access to use it (using SSH tunneling to forward ports to localhost)
-
-Unfortunately, this means that any configuration I make towards ZNC is not reproducible. Unless, I have some way to get that configuration file, and put it into version control. There are two ways I'm thinking of doing this:
-
-**** Remote git
-ZNC sports a commandline interface for administrators to use. This is kind of scary, specifically because I don't change my IRC password /that/ often and I know someone even mildly security oriented is already shaking their head.
-
-The gist of it is that I put the git repository in the server holding the config file, and use some git transport mechanism (likely either through circe or ssh) to clone the repo locally.
-
-***** Pros
-Well it does the job
-
-***** Cons
-I really don't want the commandline interface to be enabled, it's far too large of an attack vector for my paranoia.
-
-Further, it's complicated. I'd need to have some way to transport commit messages (or auto generate them, but that is useless when it comes to diagnostics), then some way to get the repo over here (without cloning it to some external git repo, as this contains plaintext passwords).
-
-**** Write a module that retrieves the file and returns it over IRC
-This is less disastrous. I don't need git to exist on the remote server, and don't need anything besides the ability to retrieve a single file (the only goodies of the file are the irc passwords, which you would already have access to if you know the ZNC admin password)
-
-***** Pros
-MUCH less security risk
-Modules can be written in Python, which I am familiar with
-
-***** Cons
-More time investment.
-
-
-
-
-
