@@ -108,19 +108,21 @@ The only thing we have to keep in mind is that if we don't use circe-actions-reg
   ;; we need closures to illustrate this example without descending into madness
   (setq lexical-binding t)
   (setq function-symbol (gensym "arbitrary-"))
+  (setq circe-event "irc.message") ;; TODO: make it easy to prompt for events
 
   (defun message-five-times-then-quit ()
+    "Generate and return a function that echoes the next 5 messages passed to it, deactivating itself at the 5th (or greater) one."
     (defalias function-symbol ; function-symbol is evaluated to get the symbol generated above
       (let ((count 0)) ; we increment this each time the lambda is called.
-
         (lambda (&rest arglist)
-          (if (< count 5) ; condition function
-              (let ((message-var (nth 4 arglist)))
-                (setq count (1+ count))
-                (message message-var)) ; action function
-            (circe-actions-deactivate-function function-symbol "irc.message"))))))
-              
+          (let ((contents-of-message (nth 4 arglist)))
+            (message contents-of-message)
+            (setq count (1+ count))
+            (when (>= count 4) 
+              (circe-actions-deactivate-function function-symbol)))))))
+                      
 
+  ;; at this point, the only thing needed is to activate it.
   (circe-actions-activate-function (message-five-times-then-quit) ; return a new independent closure
                                    "irc.message")  
 #+END_SRC
@@ -132,15 +134,16 @@ Of course if you want to bind all this to a key you could wrap all of it in an i
   (defun message-five-times-then-quit ()
     (interactive)
     (let ((function-symbol (gensym "arbitrary-"))
-          (event "irc.message")) ; might as well parameterize it here
+          (event "irc.message")) 
       (defalias function-symbol
         (let ((count 0))
           (lambda (&rest arglist)
-            (if (< count 5) ; condition function
-                (let ((message-var (nth 4 arglist)))
-                  (setq count (1+ count))
-                  (message message-var)) ; action-function
-              (circe-actions-deactivate-function function-symbol event)))))
+            (let ((contents-of-message (nth 4 arglist)))
+              (message contents-of-message)
+              (setq count (1+ count))
+              (when (>= count 4)
+                (circe-actions-deactivate-function function-symbol))))))
+      
       (circe-actions-activate-function function-symbol event)))
 
 #+END_SRC
