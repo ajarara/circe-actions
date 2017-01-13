@@ -199,13 +199,16 @@ circe-actions-hippie-is-from-p"
 
 ;;;###autoload
 (defun enable-circe-actions ()
+  "load in circe-actions.el. do nothing else."
   (interactive)
   nil)
 
 ;;;###autoload
 (defun disable-circe-actions ()
+  "remove all active handlers, persistent or otherwise. Essentially a defalias to circe-actions-panic with a different docstring."
   (interactive)
   ;; there really isn't anything else to do besides killing the handlers
+  ;; unload functions from function namespace?
   (circe-actions-panic))
 
 ;; unimplemented parts of the package
