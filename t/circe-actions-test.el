@@ -294,3 +294,11 @@ Then, check it's not on the bucket anymore."
 	 ;; ;; check it's no longer active
 	 (should (null (circe-actions-is-active-p some-sym event)))
       ))))
+
+(ert-deftest circe-actions--who-needs-dash-test ()
+  (let* ((list-1 (list :yes :no :other))
+	 (list-2 (list "yes" "no" "other"))
+	 (list-interleaved (circe-actions--who-needs-dash list-1 list-2)))
+    (should (plist-member list-interleaved :yes))
+    (should (equal (plist-get list-interleaved :yes) "yes"))
+    (should (equal (plist-get list-interleaved :other) "other"))))

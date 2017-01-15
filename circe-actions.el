@@ -149,15 +149,27 @@ something is causing errors constantly"
 	      (circe-actions-deactivate-function handler event)))
 	  circe-actions-handlers-alist)
   (message "All handlers cleared!"))
+p
 
+;; -------------------- generalized plistify function --------------------
 
-;; -------------------- generalized dispatch function --------------------
+(defun circe-actions-plistify (event arglist)
+  "given an event, obtain the event signature list from `circe-actions-event-plists', interleave the arglist with whatever was obtained, and return it. The result is a plist. Example:
 
-(defun circe-actions-plistify (arg-wanted event arglist)
-  ""
+  > (circe-actions-plistify \"irc.message\" '((circe-server-process)
+                                               \"irc.message\"
+                                               \"alphor!@~...\"
+                                               \"#freenode\"
+                                               \"Meow!\"))
+  '(:server-proc (circe-server-process)
+    :event \"irc.message\"
+    :fq-username \"alphor!@~...\"
+    :channel \"#freenode\"
+    :contents \"Meow!\"))
+
+"
   nil)
 
-;; untested as of now.
 (defun circe-actions--who-needs-dash (list-1 list-2)
   "-interleave does exactly this, but expanding the dependency graph
   just for this one use is a cost I'm not willing to pay"
@@ -168,18 +180,18 @@ something is causing errors constantly"
 	(list-2-null (null list-2)))
     (cond ((funcall xor-func list-1-null list-2-null)
 	   (error "not the same number of arguments! list-1: %s \n list-2ld %s" list-1 list-2))
-	  (if (null list-1)
-	      nil
+	  ((null list-1) nil)
+	  (t
 	    (cons (car list-1)
 		  (cons (car list-2)
-			(circe-actions-who--needs-dash (cdr list-1)
+			(circe-actions--who-needs-dash (cdr list-1)
 						       (cdr list-2))))))))
 
-;; should be set to nil and populated on circe-actions-enable.
+;; should be set to nil and populated on circe-actions-enable?
 (defvar circe-actions-event-plists
   (let ((hash-table (make-hash-table))
 	(default-event-signature (list :server-proc :event :fq-username :channel :contents)))
-    (puthash "irc.message" default-event-signature 'hash-table)
+    (puthash "irc.message" default-event-signature hash-table)
     ))
     
 	 
