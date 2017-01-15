@@ -301,4 +301,6 @@ Then, check it's not on the bucket anymore."
 	 (list-interleaved (circe-actions--who-needs-dash list-1 list-2)))
     (should (plist-member list-interleaved :yes))
     (should (equal (plist-get list-interleaved :yes) "yes"))
-    (should (equal (plist-get list-interleaved :other) "other"))))
+    (should (equal (plist-get list-interleaved :other) "other"))
+    (should-error (circe-actions--who-needs-dash '(1 2) '(1)))
+    ))

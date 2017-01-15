@@ -149,7 +149,6 @@ something is causing errors constantly"
 	      (circe-actions-deactivate-function handler event)))
 	  circe-actions-handlers-alist)
   (message "All handlers cleared!"))
-p
 
 ;; -------------------- generalized plistify function --------------------
 
@@ -168,7 +167,8 @@ p
     :contents \"Meow!\"))
 
 "
-  nil)
+  (circe-actions--who-needs-dash (gethash event circe-actions-event-plists)
+				 arglist))
 
 (defun circe-actions--who-needs-dash (list-1 list-2)
   "-interleave does exactly this, but expanding the dependency graph
@@ -179,7 +179,7 @@ p
 	(list-1-null (null list-1))
 	(list-2-null (null list-2)))
     (cond ((funcall xor-func list-1-null list-2-null)
-	   (error "not the same number of arguments! list-1: %s \n list-2ld %s" list-1 list-2))
+	   (error "not the same number of arguments! list-1: %s \n list-2: %s" list-1 list-2))
 	  ((null list-1) nil)
 	  (t
 	    (cons (car list-1)
@@ -194,11 +194,6 @@ p
     (puthash "irc.message" default-event-signature hash-table)
     ))
     
-	 
-    
-    
-  
-  
 
 ;; -------------------- utility functions? Sure! --------------------
 
@@ -251,7 +246,7 @@ circe-actions-hippie-is-from-p"
 
 ;;;###autoload
 (defun disable-circe-actions ()
-  "remove all active handlers, persistent or otherwise. Essentially a defalias to circe-actions-panic with a different docstring."
+  "remove all active handlers, persistent or otherwise. Essentially a defalias to circe-actions-panic with a worse docstring."
   (interactive)
   ;; there really isn't anything else to do besides killing the handlers
   ;; unload functions from function namespace?
