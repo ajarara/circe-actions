@@ -1,4 +1,7 @@
 * Todo
+** dispatch based on event
+example usage: 
+(circe-actions-get 'message "irc.message" arg-list)
 ** illustrate with doctor-callbacks
 M-x doctor is weird. would be a humorous example, but the way it's designed is strange as all hell.
 ** Tests!

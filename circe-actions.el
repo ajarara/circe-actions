@@ -105,8 +105,7 @@ place it at event in the hash-table obtained from circe's irc handler table."
 
 (defun circe-actions-register (condition-p-function action-function event &optional persist)
   "Given a CONDITION-P-FUNCTION and ACTION-FUNCTION that takes args
-  consistent with the EVENT passed (as shown in the README, or
-  consulting `circe-actions-handler-arguments'):
+  consistent with the EVENT passed (as shown in the README.)
 
 1) generate a procedure that executes ACTION-FUNCTION when CONDITION-P-FUNCTION
 2) place it and its associated event on circe-actions-handlers-alist
@@ -152,7 +151,42 @@ something is causing errors constantly"
   (message "All handlers cleared!"))
 
 
+;; -------------------- generalized dispatch function --------------------
 
+(defun circe-actions-plistify (arg-wanted event arglist)
+  ""
+  nil)
+
+;; untested as of now.
+(defun circe-actions--who-needs-dash (list-1 list-2)
+  "-interleave does exactly this, but expanding the dependency graph
+  just for this one use is a cost I'm not willing to pay"
+  (let ((xor-func (lambda (bool-1 bool-2)
+		    (or (and bool-1 (not bool-2))
+			(and (not bool-1) bool-2))))
+	(list-1-null (null list-1))
+	(list-2-null (null list-2)))
+    (cond ((funcall xor-func list-1-null list-2-null)
+	   (error "not the same number of arguments! list-1: %s \n list-2ld %s" list-1 list-2))
+	  (if (null list-1)
+	      nil
+	    (cons (car list-1)
+		  (cons (car list-2)
+			(circe-actions-who--needs-dash (cdr list-1)
+						       (cdr list-2))))))))
+
+;; should be set to nil and populated on circe-actions-enable.
+(defvar circe-actions-event-plists
+  (let ((hash-table (make-hash-table))
+	(default-event-signature (list :server-proc :event :fq-username :channel :contents)))
+    (puthash "irc.message" default-event-signature 'hash-table)
+    ))
+    
+	 
+    
+    
+  
+  
 
 ;; -------------------- utility functions? Sure! --------------------
 
