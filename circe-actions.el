@@ -154,15 +154,17 @@ something is causing errors constantly"
 
 ;; -------------------- generalized plistify function --------------------
 
-(defun circe-actions-plistify (event arglist)
-  "given an event, obtain the event signature list from `circe-actions-event-plists', interleave the arglist with whatever was obtained, and return it. The result is a plist. Example:
+(defun circe-actions-plistify (arglist &optional event)
+  "given an event, obtain the event signature list from `circe-actions-event-plists', interleave the arglist with whatever was obtained, and return it. The result is a plist. If no event given, attempt to get the event from the arglist. Example:
 
   ;; calling
-  (circe-actions-plistify \"irc.message\" '((circe-server-process)
-                                               \"irc.message\"
-                                               \"alphor!@~...\"
-                                               \"#freenode\"
-                                               \"Meow!\"))
+  (circe-actions-plistify '((circe-server-process)
+			     \"irc.message\"
+			     \"alphor!@~...\"
+			     \"#freenode\"
+			     \"Meow!\")
+                             \"irc.message\")
+
   ;; yields this
   '(:server-proc (circe-server-process)
     :event \"irc.message\"
@@ -171,6 +173,8 @@ something is causing errors constantly"
     :contents \"Meow!\"))
 
 "
+  (unless event
+    (setq event (nth 1 arglist))) ; if event is not set, obtain it from the arglist.
   (circe-actions--who-needs-dash (gethash event circe-actions-event-plists)
 				 arglist))
 

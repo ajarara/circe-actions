@@ -194,7 +194,7 @@ This code requires circe, and circe-actions (zncirce.el is little more than a wr
 
 ** Usage
 *** zncirce-get-buffer-for-chan
-This does not get the emacs-lisp buffer, but instead displays the value of the buffer variable associated with a specific channel. The buffer variable with respect to ZNC is the number of lines played to you when you initially connect. Keep these numbers conservative! Emacs doesn't respond well when it is handling 1000s of lines being played back to it.
+This does not get the emacs-lisp buffer, but instead displays the value of the buffer variable associated with a specific channel. The buffer variable with respect to ZNC is the number of lines played to you when you initially connect. Sending the universal argument allows you to set the buffer variable instead. Keep these numbers conservative! Emacs doesn't respond well when it is handling 1000s of lines being played back to it.
 
 *** zncirce-save-config
 After making changes, ZNC does not automatically save configuration (in case you make a customization that is rogue). If you're happy with the way ZNC behaves, this will save your configuration on the remote machine, making the config persist on reboot.
