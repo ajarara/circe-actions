@@ -124,6 +124,8 @@ If persist is set, the procedure does not remove itself after being called once.
     ;; of the expressions so that we can inspect them while they are active.
     ;; we can use this to deactivate them by symbol quickly
     ;; possibly with completing-read, and a default value of our gensym.
+    ;; this complicates the activate-function interface, if implemented
+    ;; could  be implemented as an optional two arguments.
     (circe-actions-activate-function handler-function event)))
 
 (defun circe-actions-is-active-p (handler-function event)
@@ -155,11 +157,13 @@ something is causing errors constantly"
 (defun circe-actions-plistify (event arglist)
   "given an event, obtain the event signature list from `circe-actions-event-plists', interleave the arglist with whatever was obtained, and return it. The result is a plist. Example:
 
-  > (circe-actions-plistify \"irc.message\" '((circe-server-process)
+  ;; calling
+  (circe-actions-plistify \"irc.message\" '((circe-server-process)
                                                \"irc.message\"
                                                \"alphor!@~...\"
                                                \"#freenode\"
                                                \"Meow!\"))
+  ;; yields this
   '(:server-proc (circe-server-process)
     :event \"irc.message\"
     :fq-username \"alphor!@~...\"
