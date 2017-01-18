@@ -32,6 +32,13 @@
 
 (defconst circe-actions-version "0.0.13")
   
+;; should be set to nil and populated on circe-actions-enable?
+(defvar circe-actions-event-plists
+  (let ((hash-table (make-hash-table))
+	(default-event-signature (list :server-proc :event :fq-username :channel :contents)))
+    (puthash "irc.message" default-event-signature hash-table)
+    ))
+
 
 (defun circe-actions-generate-handler-function
     (condition-p-function action-function symbol event &optional persist)
@@ -39,7 +46,7 @@
   ACTION-FUNCTION when CONDITION-P-FUNCTION
 
 SYMBOL should be uninterned, but doesn't have to be. This is not the
-same symbol passed to circe-actions-register.
+same symbol(s) passed to circe-actions-register.
 EVENT is a string key, like irc.message obtained from circe-irc-handler-table
 
 if PERSIST is non-nil, do not remove the symbol from the handler
@@ -49,10 +56,11 @@ from (circe-irc-handler-table), do not pass go.
 PERSIST is a dangerous flag to set. If you pass in an expensive
 condition or action, paired with a high occurence rate event, your
 emacs system will slow to a crawl, and the only way to deactivate it
-is through an interactive circe-actions-deactivate-function call.
+is through an interactive circe-actions-deactivate-function call, or
+by calling circe-actions-panic, which deactivates all handlers
+indiscriminately.
 
-CONDITION-P-FUNCTION and ACTION-FUNCTION must be procedures with this
-argument signature:
+CONDITION-P-FUNCTION and ACTION-FUNCTION must be procedures that have the same event signature as the event it handles, as described in circe-actions-event-plists. In the case of \"irc.message\", it should either take in a list of arguments (to be processed by `circe-actions-plistify')
 
 server-proc - usually the result of (circe-server-process)
 event - the event, ie irc.message or a ctcp ping
@@ -195,12 +203,6 @@ something is causing errors constantly"
 			(circe-actions--who-needs-dash (cdr list-1)
 						       (cdr list-2))))))))
 
-;; should be set to nil and populated on circe-actions-enable?
-(defvar circe-actions-event-plists
-  (let ((hash-table (make-hash-table))
-	(default-event-signature (list :server-proc :event :fq-username :channel :contents)))
-    (puthash "irc.message" default-event-signature hash-table)
-    ))
     
 
 ;; -------------------- utility functions? Sure! --------------------

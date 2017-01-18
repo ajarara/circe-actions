@@ -5,17 +5,23 @@
 ** What is circe-actions?
 A convenient interface to building callback-style functions to handle events emitted by circe.
 
-Most use cases call for circe-actions-register, which does almost all of the heavy lifting by generating the function for you, assigning it an uninterned symbol (i.e. one that won't pollute the function namespace), and placing it on an alist and the associated event hook (a hash table with events as keys), which circe calls as it handles events itself.
+Events can be messages, ctcp actions, nickserv ghosting, even [[https://www.alien.net.au/irc/irc2numerics.html][certain RPL codes]] like RPL_WELCOME and RPL_TOPIC.
+
+Most use cases call for circe-actions-register, which does almost all of the heavy lifting by generating the callback for you, assigning it an uninterned symbol (i.e. one that won't pollute the function namespace), and placing it on an alist and the associated event hook (a hash table with events as keys), which circe calls as it handles events itself.
 
 This magical function asks for 3 arguments (and an optional one):
 
 *** Condition-p-function
-This parameter should be a procedure that will be passed arguments depending on the event. For example, any "irc.message" event passes 5 arguments to a function on the handler-table ([[#event-signatures][Event signatures]] describes known arguments for each event). When the procedure returns non-nil, the action-function is then called.
+This parameter should be a procedure that is passed a list of arguments. This list of arguments is specific to the event, but they are mostly all the same.
+
+For example, any "irc.message" event passes 5 arguments to a function on the handler-table ([[#event-signatures][Event signatures]] describes known arguments for each event). When the procedure returns non-nil, the action-function is then called.
 
 *** Action-function
-This parameter should be a procedure that will be passed arguments in the exact same order as condition-p-function, and does whatever you want it to do.
+This parameter should be a procedure that will be passed the same arguments in the exact same order as condition-p-function, and does whatever you want it to do.
 
-Whatever is returned from the action-function is returned from the whole generated function, but the "hook"-runner (irc-handler-run in irc.el) doesn't care about the return value.
+Whatever is returned from the action-function is returned from the whole generated function, but the "hook"-runner (irc-handler-run in circe's irc.el) doesn't care about the return value, as long as no error occurs.
+
+You can of course save or otherwise send these arguments elsewhere, provided the action function returns.
 
 *** Event
 Should be the string associated with the event. Look to [[#event-signatures][event signatures]] for descriptions of each of these events.
