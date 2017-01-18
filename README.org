@@ -34,15 +34,15 @@ Additionally, this can be used if you want to capture the next n events satisfyi
 ** Example usage
 Say I want to capture the next time someone sends me a private message. I can use either PRIVMSG, or irc.message, both seem to be equivalent. First we need a condition function:
 #+BEGIN_SRC emacs-lisp
-  (defun you-talkin-to-me?-p (server-proc event fq-username channel contents)
-    (equal channel "alphor"))
+  (defun you-talkin-to-me?-p (server-proc event fq-username target contents)
+    (equal target "alphor")) 
 #+END_SRC
 
 That's it! (Coincidentally this use case is probably pretty common, and so there are functions that make this considerably less verbose, take a look at circe-actions-sent-to-p and its liberal cousin, circe-actions-hippie-sent-to-p, which both make use of closures to get you what you want. Usage in [[#utility-functions][utility functions]]).
 
 Then we need an action function. Using xfce4's notify-send, I can let myself know who sent me a message and what they said, even if emacs is not focused.
 #+BEGIN_SRC emacs-lisp
-  (defun who-said-what? (server-proc event fq-username channel contents)
+  (defun who-said-what? (server-proc event fq-username target contents)
     (async-shell-command (concat "notify-send " "\"" fq-username " sent you: " contents "\"")))
 #+END_SRC
 

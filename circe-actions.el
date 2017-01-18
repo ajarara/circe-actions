@@ -35,7 +35,7 @@
 ;; should be set to nil and populated on circe-actions-enable?
 (defvar circe-actions-event-plists
   (let ((hash-table (make-hash-table))
-	(default-event-signature (list :server-proc :event :fq-username :channel :contents)))
+	(default-event-signature (list :server-proc :event :fq-username :target :contents)))
     (puthash "irc.message" default-event-signature hash-table)
     ))
 
