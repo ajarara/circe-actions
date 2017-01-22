@@ -6,13 +6,16 @@
 A convenient interface to building callback-style functions to handle events emitted by circe.
 
 Events can be messages, ctcp actions, nickserv ghosting, even [[https://www.alien.net.au/irc/irc2numerics.html][certain RPL codes]] like RPL_WELCOME and RPL_TOPIC.
+** Table of contents
+- [[#Example-Usage][Example usage]]
+- [[#How-this-works][How this works]] 
 
 Most use cases call for circe-actions-register, which does almost all of the heavy lifting by generating the callback for you, assigning it an uninterned symbol (i.e. one that won't pollute the function namespace), and placing it on an alist and the associated event hook (a hash table with events as keys), which circe calls as it handles events itself.
 
 This magical function asks for 3 arguments (and an optional one):
 
 *** Condition-p-function
-This parameter should be a procedure that is passed a list of arguments. This list of arguments is specific to the event, but they are mostly all the same.
+This parameter should be a procedure that is passed a bunch of arguments. These arguments are specific to the event, but they are mostly all the same.
 
 For example, any "irc.message" event passes 5 arguments to a function on the handler-table ([[#event-signatures][Event signatures]] describes known arguments for each event). When the procedure returns non-nil, the action-function is then called.
 
@@ -67,6 +70,16 @@ Now this happens for the rest of your session!
 Circe has an event handler table, a hash table accessed by a function called (circe-irc-handler-table), which is filled with different buckets, with events as values. When Circe becomes aware of the event, it runs whatever is in the bucket associated with the event (a list of functions with a specific signature, or the empty list). Then when each element of the list has ran, Circe does whatever it does to handle the event itself. If it encounters an error, though, then the event will not be fully handled by Circe! This can mean missed messages if you don't test your functions before registering them.
 
 Circe-actions handles all the bureaucracy of adding functions to this table, keeping track of them with circe-actions-handlers-alist and even providing functions to deactivate them (circe-actions-deactivate-function).
+
+*** circe-actions-plistify
+This function takes an event and a list of arguments and turns the list of arguments into a plist appropriate for the event. Rather than memorize the order of each signature, you can instead define functions like this:
+#+BEGIN_SRC emacs-lisp
+  (define echo-contents (&rest arglist)
+    (let ((easy-arglist (circe-actions-plistify "irc.message" arglist)))
+      ;;; now all the args are propertized, so you can access them like this
+      (message (plist-get easy-arglist :target ))))
+
+#+END_SRC
 
 *** Event signatures
 Parameters are passed in the order described.
@@ -153,7 +166,6 @@ Of course if you want to bind all this to a key you could wrap all of it in an i
       (circe-actions-activate-function function-symbol event)))
 
 #+END_SRC
-
 
 *** Utility functions
 

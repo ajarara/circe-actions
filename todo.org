@@ -1,7 +1,9 @@
 * Todo
-** dispatch based on event
-example usage: 
+** DONE dispatch based on event
+example usage:
 (circe-actions-get 'message "irc.message" arg-list)
+
+implemented instead with circe-actions-plistify
 ** illustrate with doctor-callbacks
 M-x doctor is weird. would be a humorous example, but the way it's designed is strange as all hell.
 ** Tests!
@@ -17,7 +19,7 @@ IE: zncirce-setchan would prompt for a buffer, then a variable, and based on tha
 There is a small problem with this. There are lots of variables at each level, and it probably varies completely across ZNC versions. I could start with a default set, and have a utility function that runs obtaining the help info, saving the values as a tuple (or just the differences).
 
 Something that is likely useful is a reader that does the above, for an arbitrary *module. 
-** Fix % bug in circe-actions-message-contents
+** DONE Fix % bug in circe-actions-message-contents
 If you don't want to format the string, (message "%s" VALUE). This avoids any bugs if someone sends a message with % in it.
 
 ** ZNC's aversion to git

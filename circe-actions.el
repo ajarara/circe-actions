@@ -208,7 +208,7 @@ something is causing errors constantly"
 ;; -------------------- utility functions? Sure! --------------------
 
 (defun circe-actions-irc-message-contents (server-proc event fq-username channel contents)
-  (message contents))
+  (message "%s" contents))
 
 (defalias 'circe-actions-ctcp-message-payload
   'circe-actions-irc-message-contents)
