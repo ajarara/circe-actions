@@ -1,4 +1,5 @@
 * Todo
+** TODO make deactivation interface
 ** DONE dispatch based on event
 example usage:
 (circe-actions-get 'message "irc.message" arg-list)

@@ -7,8 +7,17 @@ A convenient interface to building callback-style functions to handle events emi
 
 Events can be messages, ctcp actions, nickserv ghosting, even [[https://www.alien.net.au/irc/irc2numerics.html][certain RPL codes]] like RPL_WELCOME and RPL_TOPIC.
 ** Table of contents
-- [[#Example-Usage][Example usage]]
-- [[#How-this-works][How this works]] 
+
+- [[#Walkthrough][Walkthrough]]
+- [[#Example-Usage][More Example usage]]
+- [[#How-this-works][How this works]]
+-- [[#circe-actions-plistify][circe-actions-plistify]]
+-- [[#Event-signatures][Event signatures]]
+-- [[#Parameter-description][Parameter description]]
+- [[#Non-callback-style-registration][Non-callback-style-registration]]
+** Walkthrough
+
+
 
 Most use cases call for circe-actions-register, which does almost all of the heavy lifting by generating the callback for you, assigning it an uninterned symbol (i.e. one that won't pollute the function namespace), and placing it on an alist and the associated event hook (a hash table with events as keys), which circe calls as it handles events itself.
 
@@ -34,7 +43,7 @@ If persist is set, the procedure does not remove itself after being called once.
 
 Additionally, this can be used if you want to capture the next n events satisfying a specific criteria, handling the dectivation yourself, as illustrated in [[#capture-n-things-then-quit][this example]
 
-** Example usage
+** More Example usage
 Say I want to capture the next time someone sends me a private message. I can use either PRIVMSG, or irc.message, both seem to be equivalent. First we need a condition function:
 #+BEGIN_SRC emacs-lisp
   (defun you-talkin-to-me?-p (server-proc event fq-username target contents)
@@ -77,7 +86,7 @@ This function takes an event and a list of arguments and turns the list of argum
   (define echo-contents (&rest arglist)
     (let ((easy-arglist (circe-actions-plistify "irc.message" arglist)))
       ;;; now all the args are propertized, so you can access them like this
-      (message (plist-get easy-arglist :target ))))
+      (message "%s" (plist-get easy-arglist :contents))))
 
 #+END_SRC
 
@@ -87,7 +96,7 @@ Parameters are passed in the order described.
 | irc.message | Fired on every message or query | server-proc, event, fq-username, channel, contents |
 
 
-Parameter description
+*** Parameter description
 **** server-proc
 The circe-server-process providing the event.
 
@@ -119,10 +128,13 @@ Where was it sent to? It can be a channel, but if it's a query/PM, then it's the
 **** contents
 What did the fq-username send us?
 
-*** Lower level registration
-This is useful if we want to control how the function deactivates itself, especially if our use case doesn't really follow a callback style.
+** Non-callback-style registration
+Circe-actions is geared towards usage of callbacks. Register an action function, do the thing that provokes the capture, execute the action. However, it is definitely possible that we want to capture the nth event, or wait for a series of conditions to happen in order before doing something, or some other creative scenario. There are only two functions necessary to use here: circe-actions-activate, and circe-actions-deactivate.
 
-The only thing we have to keep in mind is that if we don't use circe-actions-register, we have to handle the deactivation step within the function (unless we don't want to deactivate the function, of course).
+
+Activation of a function w.r.t a specific event makes it get called _every time_ the event occurs, with the same argument signature.
+
+The only thing we have to keep in mind is that we have to handle the deactivation step within the function (unless we don't want to deactivate the function, of course).
 #+BEGIN_SRC emacs-lisp
   ;; we need closures to illustrate this example without descending into madness
   (setq lexical-binding t)
@@ -130,12 +142,12 @@ The only thing we have to keep in mind is that if we don't use circe-actions-reg
   (setq circe-event "irc.message") ;; TODO: make it easy to prompt for events
 
   (defun message-five-times-then-quit ()
-    "Generate and return a function that echoes the next 5 messages passed to it, deactivating itself at the 5th (or greater) one."
+    "Generate and return a function that messages the next 5 messages passed to it, deactivating itself at the 5th (or greater) one."
     (defalias function-symbol ; function-symbol is evaluated to get the symbol generated above
       (let ((count 0)) ; we increment this each time the lambda is called.
         (lambda (&rest arglist)
           (let ((contents-of-message (nth 4 arglist)))
-            (message contents-of-message)
+            (message "%s" contents-of-message) ; see message warning in README
             (setq count (1+ count))
             (when (>= count 4) 
               (circe-actions-deactivate-function function-symbol)))))))
@@ -158,7 +170,7 @@ Of course if you want to bind all this to a key you could wrap all of it in an i
         (let ((count 0))
           (lambda (&rest arglist)
             (let ((contents-of-message (nth 4 arglist)))
-              (message contents-of-message)
+              (message "%s" contents-of-message)
               (setq count (1+ count))
               (when (>= count 4)
                 (circe-actions-deactivate-function function-symbol))))))
