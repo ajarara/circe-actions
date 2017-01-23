@@ -11,9 +11,9 @@ Events can be messages, ctcp actions, nickserv ghosting, even [[https://www.alie
 - [[#Walkthrough][Walkthrough]]
 - [[#Example-Usage][More Example usage]]
 - [[#How-this-works][How this works]]
--- [[#circe-actions-plistify][circe-actions-plistify]]
--- [[#Event-signatures][Event signatures]]
--- [[#Parameter-description][Parameter description]]
++ [[#circe-actions-plistify][circe-actions-plistify]]
++ [[#Event-signatures][Event signatures]]
++ [[#Parameter-description][Parameter description]]
 - [[#Non-callback-style-registration][Non-callback-style-registration]]
 ** Walkthrough
 
@@ -84,7 +84,7 @@ Circe-actions handles all the bureaucracy of adding functions to this table, kee
 This function takes an event and a list of arguments and turns the list of arguments into a plist appropriate for the event. Rather than memorize the order of each signature, you can instead define functions like this:
 #+BEGIN_SRC emacs-lisp
   (define echo-contents (&rest arglist)
-    (let ((easy-arglist (circe-actions-plistify "irc.message" arglist)))
+    (let ((easy-arglist (circe-actions-plistify arglist "irc.message")))
       ;;; now all the args are propertized, so you can access them like this
       (message "%s" (plist-get easy-arglist :contents))))
 
@@ -129,7 +129,7 @@ Where was it sent to? It can be a channel, but if it's a query/PM, then it's the
 What did the fq-username send us?
 
 ** Non-callback-style registration
-Circe-actions is geared towards usage of callbacks. Register an action function, do the thing that provokes the capture, execute the action. However, it is definitely possible that we want to capture the nth event, or wait for a series of conditions to happen in order before doing something, or some other creative scenario. There are only two functions necessary to use here: circe-actions-activate, and circe-actions-deactivate.
+Circe-actions is geared towards usage of callbacks. Register a function, do something that provokes a response, execute the function with the context of the response. However, it is definitely possible that we want to capture the nth event, or wait for a series of conditions to happen in order before doing something, or some other creative scenario. There are only two functions necessary to use here: circe-actions-activate, and circe-actions-deactivate.
 
 
 Activation of a function w.r.t a specific event makes it get called _every time_ the event occurs, with the same argument signature.
