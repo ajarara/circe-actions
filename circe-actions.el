@@ -73,7 +73,7 @@ contents - text payload of the event"
 	(when (apply condition-p-function args)
 	  (unless persist
 	    (circe-actions-deactivate-function symbol event))
-          (apply action-function args))))))
+	  (apply action-function args))))))
 
 (defun circe-actions-deactivate-function (handler-function event)
   "Remove HANDLER-FUNCTION from EVENT bucket in circe-irc-handler-table, and remove it from the alist, in that order."
@@ -163,7 +163,10 @@ something is causing errors constantly"
 ;; -------------------- generalized plistify function --------------------
 
 (defun circe-actions-plistify (arglist &optional event)
-  "given an event, obtain the event signature list from `circe-actions-event-plists', interleave the arglist with whatever was obtained, and return it. The result is a plist. If no event given, attempt to get the event from the arglist. Example:
+  "Given an event, obtain the event signature list from
+  `circe-actions-event-plists', interleave the arglist with whatever
+  was obtained, and return it. The result is a plist. If no event
+  given, attempt to get the event from the arglist. Example:
 
   ;; calling
   (circe-actions-plistify '((circe-server-process)
@@ -183,19 +186,21 @@ something is causing errors constantly"
 "
   (unless event
     (setq event (nth 1 arglist))) ; if event is not set, obtain it from the arglist.
+  ;; circe-actions--who-needs-dash is -interleave from dash.el
   (circe-actions--who-needs-dash (gethash event circe-actions-event-plists)
 				 arglist))
 
 (defun circe-actions--who-needs-dash (list-1 list-2)
-  "-interleave does exactly this, but expanding the dependency graph
-  just for this one use is a cost I'm not willing to pay"
+  "-interleave from dash.el does exactly this, but expanding the
+  dependency graph just for this one use is a cost I'm not willing to
+  pay. Error message reflects usage in circe-actions-plistify."
   (let ((xor-func (lambda (bool-1 bool-2)
 		    (or (and bool-1 (not bool-2))
 			(and (not bool-1) bool-2))))
 	(list-1-null (null list-1))
 	(list-2-null (null list-2)))
     (cond ((funcall xor-func list-1-null list-2-null)
-	   (error "not the same number of arguments! list-1: %s \n list-2: %s" list-1 list-2))
+	   (error "circe-actions-plistify didn't plistify this event correctly! plist-keys: %s \n arglist: %s" list-1 list-2))
 	  ((null list-1) nil)
 	  (t
 	    (cons (car list-1)
