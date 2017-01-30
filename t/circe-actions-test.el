@@ -31,7 +31,7 @@
 
 (ert-deftest circe-actions-version-test ()
   "Check that we're testing the correct version"
-  (should (equal "0.0.13" circe-actions-version)))
+  (should (equal "0.0.14" circe-actions-version)))
 
 (ert-deftest circe-actions-t-test ()
   "Test circe-actions-t always returns t independent of the arguments"
@@ -225,16 +225,16 @@ Then, check it's not on the bucket anymore."
        (null (circe-actions-handler-is-on-handler-table-p some-sym
       							  event)))
       ;; Huh... weird, irc.message is not on the mock handler table.
-      (message (with-temp-buffer
-		 (print "Event as given: ")
-		 (cl-prettyprint event)
+      ;; (message (with-temp-buffer
+      ;; 		 (print "Event as given: ")
+      ;; 		 (cl-prettyprint event)
 		 
-		 (let ((keys (hash-table-keys (circe-irc-handler-table))))
-		   (print "Event in handler list?")
-		   (cl-prettyprint (member event keys))
-		   (print "Handler list")
-		   (cl-prettyprint keys))
-		 (buffer-string)))
+      ;; 		 (let ((keys (hash-table-keys (circe-irc-handler-table))))
+      ;; 		   (print "Event in handler list?")
+      ;; 		   (cl-prettyprint (member event keys))
+      ;; 		   (print "Handler list")
+      ;; 		   (cl-prettyprint keys))
+      ;; 		 (buffer-string)))
 	       
       (circe-actions-activate-function some-sym event)
       (should

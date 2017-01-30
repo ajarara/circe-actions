@@ -30,13 +30,16 @@
 ;; primarily designed to deal with irc.message-like events (irc.ctcp
 ;; is also included). Later on it may be necessary to change this.
 
-(defconst circe-actions-version "0.0.13")
+(defconst circe-actions-version "0.0.14")
   
+(defconst circe-actions-default-event-signature
+  (list :server-proc :event :fq-username :target :contents)
+  "Default list of symbols obtained if there is no match in circe-actions-event-plists for the event.")
+
 ;; should be set to nil and populated on circe-actions-enable?
 (defvar circe-actions-event-plists
-  (let ((hash-table (make-hash-table))
-	(default-event-signature (list :server-proc :event :fq-username :target :contents)))
-    (puthash "irc.message" default-event-signature hash-table)
+  (let ((hash-table (make-hash-table)))
+    (puthash "irc.message" circe-actions-default-event-signature hash-table)
     ))
 
 
@@ -187,7 +190,9 @@ something is causing errors constantly"
   (unless event
     (setq event (nth 1 arglist))) ; if event is not set, obtain it from the arglist.
   ;; circe-actions--who-needs-dash is -interleave from dash.el
-  (circe-actions--who-needs-dash (gethash event circe-actions-event-plists)
+  (circe-actions--who-needs-dash (gethash event
+					  circe-actions-event-plists
+					  circe-actions-default-event-signature)
 				 arglist))
 
 (defun circe-actions--who-needs-dash (list-1 list-2)
