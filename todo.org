@@ -5,16 +5,16 @@ example usage:
 (circe-actions-get 'message "irc.message" arg-list)
 
 implemented instead with circe-actions-plistify
-** illustrate with doctor-callbacks
+** TODO illustrate with doctor-callbacks
 M-x doctor is weird. would be a humorous example, but the way it's designed is strange as all hell.
-** Tests!
+** TODO Tests!
 Should be implemented with Buttercup, I think. Testing interactively with ERT is a pain, I've already had to build my own mock functions (that don't accurately reflect the actual environment). I'd much rather have the ability to call the real functions in a mock environment. ERT has no easy facility to do this.
 
 Further, it would probably be a good idea to move some of the ert tests in circe-actions to buttercup as well. 
 
-** Check if connected to a ZNC instance 
+** TODO Check if connected to a ZNC instance 
 Is it important to check everytime a function runs or sufficient to check once per circe session?
-** Generalized *controlpanel interface
+** TODO Generalized *controlpanel interface
 IE: zncirce-setchan would prompt for a buffer, then a variable, and based on that, prompt for either a string, integer, or boolean, and send them to *controlpanel.
 
 There is a small problem with this. There are lots of variables at each level, and it probably varies completely across ZNC versions. I could start with a default set, and have a utility function that runs obtaining the help info, saving the values as a tuple (or just the differences).
@@ -23,7 +23,7 @@ Something that is likely useful is a reader that does the above, for an arbitrar
 ** DONE Fix % bug in circe-actions-message-contents
 If you don't want to format the string, (message "%s" VALUE). This avoids any bugs if someone sends a message with % in it.
 
-** ZNC's aversion to git
+** TODO ZNC's aversion to git
 ZNC sports a config file, but users are discouraged from editing it directly, instead being pointed to using the web admin panel. I've disabled the web admin panel pointing on public IP addresses (which funnily enough required me editing the config file by hand), only allowing those with SSH access to use it (using SSH tunneling to forward ports to localhost)
 
 Unfortunately, this means that any configuration I make towards ZNC is not reproducible. Unless, I have some way to get that configuration file, and put it into version control. There are two ways I'm thinking of doing this:
@@ -54,4 +54,4 @@ More time investment.
 
 
 
-
+** TODO Move github presentation to circe-znc
