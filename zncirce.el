@@ -20,7 +20,7 @@
 (defvar zncirce-server-name-func
   (lambda ()
     (let ((nick-network (irc-connection-get (circe-server-process) :user)))
-	  (cadr (split-string nick-network "/"))))
+      (cadr (split-string nick-network "/"))))
 	  
   "Assuming :user in circe-network-options follows the conventions
   laid forth in the ZNC wiki homepage: http://wiki.znc.in/ZNC This
