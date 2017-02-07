@@ -14,8 +14,8 @@ Events can be messages, ctcp actions, nickserv ghosting, even [certain RPL codes
 ## Table of contents
 
 - [Walkthrough](#walkthrough)
-- [More example usage](#more-example-usage)
-- [How this works](#how-this-works)
+- [Utility functions](#utility-functions)
+- [Internals of circe-actions](#internals-of-circe-actions)
 - [circe-actions-plistify](#circe-actions-plistify)
 - [Event signatures](#event-signatures)
 - [Parameter description](#parameter description)
@@ -88,8 +88,49 @@ Notice the "t".
 
 Now _everytime_ someone says something in #foo, the minibuffer'll know about it. To disable all persistent handlers, M-x circe-actions-panic, or M-x circe-actions-disable gets rid of them. (As of now, there is no way to disable specific ones, as there isn't an easy way I can think of to present them to the user)
 
+Of course, there is another way to handle other non-callback use cases, see [non-callback-style registration](#non-callback-style-registration)
 
-## How this works
+## Utility functions
+Circe-actions takes the liberty of defining loads of helpful closures, to help you save every follicle in these trying times.
+
+### circe-actions-panic
+In the case that something is tripping the debugger 3 times a second, you'll probably want this. It iterates through the alist holding all the registered functions and removes them from the handler table (and the alist). This function is also called when you call M-x disable-circe-actions.
+
+### circe-actions-t
+In case you want to capture the next event unconditionally, you may be tempted to use t as a condition function. This won't work. Instead, you must wrap t in a lambda that takes in the correct number of arguments. circe-actions-t is exactly this.
+
+### Lexically bound functions
+These are all functions that make it easy to devise condition functions without dealing with the rather large function signature needed or mucking about with circe-actions-plistify. Once called, they will return an appropriate closure satisfying the condition you want.
+
+__Note:__ These _return_ functions to be used as predicates, they are not predicates themselves. The whole point is so that you don't have to set up lexical binding in your init file to make these closures without resorting to dynamically scoped alists if you don't want to.
+
+#### circe-actions-is-from-p
+Usage: (circe-actions-from-p "alphor!~floor13@2604:180:2::10")
+
+Returns a closure that when evaluated with the right arguments, returns true when the event was caused by "alphor!~floor13@2604:180:2::10".
+
+Wait does this mean that you can only reliably target cloaks? Yes. This is more useful for ZNC, when you want to make absolutely sure you got the message from the right entity. But don't worry, my child:
+
+#### circe-actions-hippie-is-from-p
+Usage: (circe-actions-hippie-is-from-p "alphor!~")
+
+Returns a closure that when evaluated with the right arguments, returns true when the event caused by the sender starts with "alphor!~"
+
+#### circe-actions-sent-to-p
+Usage: (circe-actions-sent-to-p "alphor!~floor13@2604:140:76::5")
+
+Returns a closure that when evaluated with the right arguments, returns true when the event is targeted at "alphor!~floor13@2604:140:76::5"
+
+#### circe-actions-hippie-sent-to-p
+Usage: (circe-actions-hippie-sent-to-p "alph")
+
+Returns a closure that when evaluated with the right arguments, returns true when the event is targeted at any nick that starts with "alph", including "alphor", "alph", but not "ALF" the [friendly extraterrestrial][]. He doesn't use IRC these days anyway.
+
+[friendly extraterrestrial]: https://en.wikipedia.org/wiki/ALF_(TV_series)
+
+
+
+## Internals of circe-actions
 This part is long, and completely unnecessary to read if you're just using circe-actions to build your own extensions.
 
 As discussed in the walkthrough, Circe has an event handler table that holds all the events as keys and (possibly empty) lists as values. Circe-actions defines a primitive called ```circe-actions-activate-function``` which takes a function and a key of the handler table, and adds the function to right place in the event handler table. It keeps track of what functions were added in an association list, circe-actions-handlers-alist. When an action is deactivated, it is first looked for in the alist, and based on what key is stored there, it is deactivated in the key of the event handler table.
