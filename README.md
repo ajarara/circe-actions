@@ -34,7 +34,8 @@ Let's say we want to be notified in the minibuffer when the next activity in a s
 We want to check for the next "irc.message" event in channel "#foo". Conceptually, we have three things here: a condition we want satisfied, an action we want done on that condition being satisfied, and the event we're concerning ourselves with.
 
 ### Condition function
-In this case, it would be...
+In this case, it would be:
+
 ``` elisp
 (defun activity-in-foo (&rest args)
     (let ((easy-args (circe-actions-plistify args "irc.message")))
@@ -54,6 +55,7 @@ Now that we have the condition function out of the way...
 
 ### Action function
 We'd like to alert ourselves in the minibuffer of what was said:
+
 ``` elisp
 (defun spit-out-payload (&rest args)
     (let ((easy-args (circe-actions-plistify args "irc.message")))
@@ -64,13 +66,14 @@ Easy enough, we just get the payload (think contents of a message) from easy-arg
 
 ### Registration
 Following along so far? Here's the hard part:
+
 ``` elisp
 (circe-actions-register 'activity-in-foo 'spit-out-payload)
 ```
 
 That's it. The next time activity-in-foo returns true (or non-nil), spit-out-payload is run with the same arguments.
 
-This only occurs once. If you want it to happen multiple times:
+This only occurs once. If you want it to persist, set the persist flag:
 
 ``` elisp
 (circe-actions-register 'activity-in-foo 'spit-out-payload t)
