@@ -51,7 +51,7 @@ It's bad style to have a function name arguments and not use them, so we could p
 
 Let's tackle some questions you might have. What's circe-actions-plistify?
 
-Circe-actions-plistify makes it easy to get what you want from the arguments passed to the function. There are 5 passed to the function, and it's arduous to remember the order every time. So instead we access them by what we want. Yes, it's an O(N) operation but do you want processor cycles or sanity? (If you're staunch  about using the first example, check [event signatures](#Event-signatures) for what you want)
+Circe-actions-plistify makes it easy to get what you want from the arguments passed to the function. There are 5 passed to the function, and it's arduous to remember the order every time. So instead we access them by what we want using plist-get. Yes, it's an O(N) operation but do you want processor cycles or sanity? (If you're staunch about using the first example, check [event signatures](#Event-signatures) for what you want)
 
 Another question: Why is the property called :target, and not :channel?
 
@@ -86,7 +86,7 @@ This only occurs once. If you want it to persist, set the persist flag:
 ```
 Notice the "t".
 
-Now _everytime_ someone says something in #foo, you'll know about it. To disable all persistent handlers, M-x circe-actions-panic, or M-x circe-actions-disable gets rid of them. (As of now, there is no way to disable specific ones, as there isn't an easy way to present them to the user)
+Now _everytime_ someone says something in #foo, the minibuffer'll know about it. To disable all persistent handlers, M-x circe-actions-panic, or M-x circe-actions-disable gets rid of them. (As of now, there is no way to disable specific ones, as there isn't an easy way I can think of to present them to the user)
 
 
 ## How this works
@@ -120,6 +120,7 @@ The persistence case is exactly the same, except it is never deactivated. It mus
 
 # Event signatures
 Parameters are passed in the order described. If an event is not in this table, assume it follows the same signature as irc.message.
+
 | Event name  | Description | Parameters |
-|-------------|-------------|------------:|
+| ----------- | ------------- | ------------:|
 | irc.message | Fired on every message or query | server-proc, event, fq-username, channel, contents |
