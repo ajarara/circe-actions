@@ -17,6 +17,8 @@ Events can be messages, ctcp actions, nickserv ghosting, even [[https://www.alie
 - [[#Non-callback-style-registration][Non-callback-style-registration]]
 ** Walkthrough
 
+Circe has an hash table internally, accessed by a function called `circe-irc-handler-table'.
+Whenever something interesting happens in a Circe irc session, an event is generated, and handled by Circe. 
 
 
 Most use cases call for circe-actions-register, which does almost all of the heavy lifting by generating the callback for you, assigning it an uninterned symbol (i.e. one that won't pollute the function namespace), and placing it on an alist and the associated event hook (a hash table with events as keys), which circe calls as it handles events itself.
