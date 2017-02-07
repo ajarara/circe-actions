@@ -98,17 +98,8 @@ The handler generator function takes in the condition function, action function,
 
 The persistence case is exactly the same, except it is never deactivated. It must either be deactivated in the action function (preferably at the beginning to avoid the situation above), or not activated at all. An example is shown in [Non-callback-style registration](#Non-callback-style-registration).
 
-
-
-
-Circe has an event handler table, a hash table accessed by a function
-called (circe-irc-handler-table), which is filled with different
-buckets, with events as values. When Circe becomes aware of the event,
-it runs whatever is in the bucket associated with the event (a list of
-functions with a specific signature, or the empty list). Then when
-each element of the list has ran, Circe does whatever it does to
-handle the event itself. If it encounters an error, though, then the
-event will not be fully handled by Circe! This can mean missed
-messages if you don't test your functions before registering them.
-
-Circe-actions handles all the bureaucracy of adding functions to this table, keeping track of them with circe-actions-handlers-alist and even providing functions to deactivate them (circe-actions-deactivate-function).
+# Event signatures
+Parameters are passed in the order described. If an event is not in this table, assume it follows the same signature as irc.message.
+| Event name  | Description | Parameters |
+|-------------|-------------|------------:|
+| irc.message | Fired on every message or query | server-proc, event, fq-username, channel, contents |

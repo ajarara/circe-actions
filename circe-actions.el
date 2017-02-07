@@ -33,7 +33,7 @@
 (defconst circe-actions-version "0.0.14")
   
 (defconst circe-actions-default-event-signature
-  (list :server-proc :event :fq-username :target :contents)
+  (list :server-proc :event :fq-username :target :payload)
   "Default list of symbols obtained if there is no match in circe-actions-event-plists for the event.")
 
 ;; should be set to nil and populated on circe-actions-enable?
