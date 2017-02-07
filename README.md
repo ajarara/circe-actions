@@ -23,16 +23,24 @@ Events can be messages, ctcp actions, nickserv ghosting, even [certain RPL codes
 
 ## Walkthrough
 
-Circe has an hash table internally, accessed by a function called ```circe-irc-handler-table```.
+First off, Circe has a hash table accessed by ```circe-irc-handler-table``` that has events as keys and functions as values.
 
-Being an IRC client, Circe is naturally responsible for handling all sorts of IRC events. When it handles an event, it also runs everything in ```circe-irc-handler-table``` associated with the type of the event, and passes them arguments. Circe doesn't care about the return values of the statements, all it does is make sure that they run without error.
+Being an IRC client, Circe is naturally responsible for handling all sorts of IRC events. When it handles an event, it also runs everything in circe-irc-handler-table associated with the type of the event, and passes them arguments. Circe doesn't care about the return values of the statements, all it does is hope that they run without error (because then Circe can't finish processing the event.)
 
 Let's say we want to be notified in the minibuffer when the next activity in a specific channel is. Ignore the fact that tracking.el (distributed with Circe) does this better.
 
 We want to check for the next "irc.message" event in channel "#foo". Conceptually, we have three things here: a condition we want satisfied, an action we want done on that condition being satisfied, and the event we're concerning ourselves with.
 
 ### Condition function
-In this case, it would be:
+Most of the work, strangely enough, is in remembering the function signature (the list of arguments a function takes) for the event.
+
+``` elisp
+(defun activity-in-foo-long (server-proc event fq-username target payload)
+   (equal target "#foo"))
+```
+
+It's bad style to have a function name arguments and not use them, so we could put underscores in the ones we don't use, but already we should be alarmed, this probably isn't the best way to do things. Instead, we can do it like this:
+
 
 ``` elisp
 (defun activity-in-foo (&rest args)
@@ -43,7 +51,7 @@ In this case, it would be:
 
 Let's tackle some questions you might have. What's circe-actions-plistify?
 
-Circe-actions-plistify makes it easy to get what you want from the arguments passed to the function. Afaict, there are 5 passed to the function, and it's arduous to remember. So instead we access them by what we want out. Yes, it's an O(N) operation but do you want processor cycles or sanity? (If you're too far gone, check [event signatures](#Event-signatures) for what you want)
+Circe-actions-plistify makes it easy to get what you want from the arguments passed to the function. There are 5 passed to the function, and it's arduous to remember the order every time. So instead we access them by what we want. Yes, it's an O(N) operation but do you want processor cycles or sanity? (If you're staunch  about using the first example, check [event signatures](#Event-signatures) for what you want)
 
 Another question: Why is the property called :target, and not :channel?
 
@@ -82,13 +90,27 @@ Now _everytime_ someone says something in #foo, you'll know about it. To disable
 
 
 ## How this works
+This part is long, and completely unnecessary to read if you're just using circe-actions to build your own extensions.
+
 As discussed in the walkthrough, Circe has an event handler table that holds all the events as keys and (possibly empty) lists as values. Circe-actions defines a primitive called ```circe-actions-activate-function``` which takes a function and a key of the handler table, and adds the function to right place in the event handler table. It keeps track of what functions were added in an association list, circe-actions-handlers-alist. When an action is deactivated, it is first looked for in the alist, and based on what key is stored there, it is deactivated in the key of the event handler table.
 
 Thus, it is possible to have the same exact function registered to different events.
 
 Speaking of registration, what goes on in circe-actions-register?
 
-Well, not that much. Circe-actions-register takes the symbols passed to it, and generates a handler function, through the use of the aptly named ```circe-actions-generate-handler-function```.
+Well, not that much. Circe-actions-register takes the symbols passed to it, and generates a handler function, through the use of the aptly named ```circe-actions-generate-handler-function```, reproduced here:
+
+``` elisp
+(defun circe-actions-generate-handler-function
+	(condition-p-function action-function symbol event &optional persist)
+  (defalias symbol
+    (lambda (server-proc event &rest rest-args)
+      (let ((args (cons server-proc (cons event rest-args))))
+        (when (apply condition-p-function args)
+          (unless persist
+            (circe-actions-deactivate-function symbol event))
+          (apply action-function args))))))
+```
 
 In the first case, suppose we have a callback oriented use case, so we do NOT set the persist flag.
 
