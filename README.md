@@ -1,5 +1,5 @@
 # circe-actions.el
-> Callback registration with minimal hair loss.
+> IRC callback registration with minimal hair loss.
 
 ## What is circe?
 [Circe][] is an IRC client for emacs sporting what most would call sane defaults. It has lots of features, not least of which is the ability to run arbitrary elisp code on many events.
@@ -80,6 +80,35 @@ This only occurs once. If you want it to persist, set the persist flag:
 ```
 Notice the "t".
 
-Now _everytime_ someone says something in #foo, you'll know about it. To disable all persistent handlers, M-x circe-actions-panic, or M-x circe-actions-disable
+Now _everytime_ someone says something in #foo, you'll know about it. To disable all persistent handlers, M-x circe-actions-panic, or M-x circe-actions-disable gets rid of them. (As of now, there is no way to disable specific ones, as there isn't an easy way to present them to the user)
 
 
+## How this works
+As discussed in the walkthrough, Circe has an event handler table that holds all the events as keys and (possibly empty) lists as values. Circe-actions defines a primitive called ```circe-actions-activate-function``` which takes a function and a key of the handler table, and adds the function to right place in the event handler table. It keeps track of what functions were added in an association list, circe-actions-handlers-alist. When an action is deactivated, it is first looked for in the alist, and based on what key is stored there, it is deactivated in the key of the event handler table.
+
+Thus, it is possible to have the same exact function registered to different events.
+
+Speaking of registration, what goes on in circe-actions-register?
+
+Well, not that much. Circe-actions-register takes the symbols passed to it, and generates a handler function, through the use of the aptly named ```circe-actions-generate-handler-function```.
+
+In the first case, suppose we have a callback oriented use case, so we do NOT set the persist flag.
+
+The handler generator function takes in the condition function, action function, a (in this case, generated and uninterned) symbol, and the event and constructs a function, returning it. It does NOT activate it. The generated function, when called (ie when on the handler table) applies the condition function to the arguments. When it returns non-nil, it immediately deactivates itself, and _then_ applies the same arguments to the action function. This is in case the action function takes long enough that the same event is emitted twice, causing it to be called again.
+
+The persistence case is exactly the same, except it is never deactivated. It must either be deactivated in the action function (preferably at the beginning to avoid the situation above), or not activated at all. An example is shown in [Non-callback-style registration](#Non-callback-style-registration).
+
+
+
+
+Circe has an event handler table, a hash table accessed by a function
+called (circe-irc-handler-table), which is filled with different
+buckets, with events as values. When Circe becomes aware of the event,
+it runs whatever is in the bucket associated with the event (a list of
+functions with a specific signature, or the empty list). Then when
+each element of the list has ran, Circe does whatever it does to
+handle the event itself. If it encounters an error, though, then the
+event will not be fully handled by Circe! This can mean missed
+messages if you don't test your functions before registering them.
+
+Circe-actions handles all the bureaucracy of adding functions to this table, keeping track of them with circe-actions-handlers-alist and even providing functions to deactivate them (circe-actions-deactivate-function).
