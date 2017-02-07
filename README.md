@@ -11,7 +11,7 @@ A convenient interface to building callback-style functions to handle events emi
 
 Events can be messages, ctcp actions, nickserv ghosting, even [certain RPL codes][] like RPL_WELCOME and RPL_TOPIC.
 
-[certain RPL codes]: https://www.alien.net.au/irc/irc2numerics.html
+[certain RPL codes]: https://tools.ietf.org/html/rfc2812#section-5
 
 ## Table of contents
 
