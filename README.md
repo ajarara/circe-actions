@@ -1,13 +1,11 @@
 # circe-actions.el
 > IRC callback registration with minimal hair loss.
 
-## What is circe?
 [Circe][] is an IRC client for emacs sporting what most would call sane defaults. It has lots of features, not least of which is the ability to run arbitrary elisp code on many events.
 
 [circe]: https://github.com/jorgenschaefer/circe
 
-## What is circe-actions
-A convenient interface to building callback-style functions to handle events emitted by circe.
+Circe-actions is a convenient interface to building callback-style functions to handle the events emitted by circe, based entirely on circe-irc-handler-table.
 
 Events can be messages, ctcp actions, nickserv ghosting, even [certain RPL codes][] like RPL_WELCOME and RPL_TOPIC.
 
@@ -15,13 +13,13 @@ Events can be messages, ctcp actions, nickserv ghosting, even [certain RPL codes
 
 ## Table of contents
 
-- [Walkthrough](#Walkthrough)
-- [More example usage](#More-example-usage)
-- [How this works](#How-this-works)
+- [Walkthrough](#walkthrough)
+- [More example usage](#more-example-usage)
+- [How this works](#how-this-works)
 - [circe-actions-plistify](#circe-actions-plistify)
-- [Event signatures](#Event-signatures)
-- [Parameter description](#Parameter description)
-- [Non-callback-style registration](#Non-callback-style-registration)
+- [Event signatures](#event-signatures)
+- [Parameter description](#parameter description)
+- [Non-callback-style registration](#non-callback-style-registration)
 
 ## Walkthrough
 
