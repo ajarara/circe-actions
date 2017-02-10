@@ -67,11 +67,16 @@ We'd like to alert ourselves in the minibuffer of what was said:
 
 ``` elisp
 (defun spit-out-payload (&rest args)
-    (let ((easy-args (circe-actions-plistify args "irc.message")))
-	  (message "Activity in #foo: %s" (plist-get :payload easy-args))))
+  (let ((easy-args (circe-actions-plistify args "irc.message")))
+    (message "Activity in #foo: %s" (plist-get :payload easy-args))))
 ```
 
-Easy enough, we just get the payload (think contents of a message) from easy-args and message it out.
+Easy enough, we just get the payload (think contents of a message) from easy-args and message it. Here's the equivalent without using plistify:
+
+``` elisp
+(defun spit-out-payload (_server-proc _event _fq-username _target payload)
+  (message "Activity in #foo: %s" payload))
+```
 
 ### Registration
 Following along so far? Here's the hard part:
