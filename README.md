@@ -29,7 +29,10 @@ Being an IRC client, Circe is naturally responsible for handling all sorts of IR
 
 Let's say we want to be notified in the minibuffer when the next activity in a specific channel is. Ignore the fact that tracking.el (distributed with Circe) does this better.
 
-We want to check for the next "irc.message" event in channel "#foo". Conceptually, we have three things here: a condition we want satisfied, an action we want done on that condition being satisfied, and the event we're concerning ourselves with.
+We want to check for the next "irc.message" event in channel "#foo". Conceptually, we have three things here: 
+ - a condition we want satisfied
+ - an action we want done on that condition being satisfied
+ - the event we're concerning ourselves with.
 
 ### Condition function
 Most of the work, strangely enough, is in remembering the function signature (the list of arguments a function takes) for the event.
@@ -39,7 +42,7 @@ Most of the work, strangely enough, is in remembering the function signature (th
    (equal target "#foo"))
 ```
 
-It's bad style to have a function name arguments and not use them, so we could put underscores in the ones we don't use, but already we should be alarmed, this probably isn't the best way to do things. Instead, we can do it like this:
+The byte compiler whines when a function names arguments and doesn't use them, so we could put underscores in the ones we don't use, but already we should be alarmed, this probably isn't the best way to do things. Instead, we can do it like this:
 
 
 ``` elisp
@@ -90,47 +93,51 @@ Now _everytime_ someone says something in #foo, the minibuffer'll know about it.
 
 Of course, there is another way to handle other non-callback use cases, see [non-callback-style registration](#non-callback-style-registration)
 
-## Utility functions
-Circe-actions takes the liberty of defining loads of helpful closures, to help you save every follicle in these trying times.
-
-### circe-actions-panic
+## circe-actions-panic
 In the case that something is tripping the debugger 3 times a second, you'll probably want this. It iterates through the alist holding all the registered functions and removes them from the handler table (and the alist). This function is also called when you call M-x disable-circe-actions.
 
-### circe-actions-t
-In case you want to capture the next event unconditionally, you may be tempted to use t as a condition function. This won't work. Instead, you must wrap t in a lambda that takes in the correct number of arguments. circe-actions-t is exactly this.
-
-### Lexically bound functions
-These are all functions that make it easy to devise condition functions without dealing with the rather large function signature needed or mucking about with circe-actions-plistify. Once called, they will return an appropriate closure satisfying the condition you want.
+# Utility functions
+Circe-actions takes the liberty of defining loads of helpful closures, to help you save every follicle in these trying times.
 
 __Note:__ These _return_ functions to be used as predicates, they are not predicates themselves. The whole point is so that you don't have to set up lexical binding in your init file to make these closures without resorting to dynamically scoped alists if you don't want to.
 
-#### circe-actions-is-from-p
+## circe-actions-t
+In case you want to capture the next event unconditionally, you may be tempted to use t as a condition function. This won't work. Instead, you must wrap t in a lambda that takes in the correct number of arguments. circe-actions-t is exactly this. In this case, there is no closure. All of the following are closures.
+
+
+## circe-actions-is-from-p
 Usage: (circe-actions-from-p "alphor!~floor13@2604:180:2::10")
 
 Returns a closure that when evaluated with the right arguments, returns true when the event was caused by "alphor!~floor13@2604:180:2::10".
 
 Wait does this mean that you can only reliably target cloaks? Yes. This is more useful for ZNC, when you want to make absolutely sure you got the message from the right entity. But don't worry, my child:
 
-#### circe-actions-hippie-is-from-p
+## circe-actions-hippie-is-from-p
 Usage: (circe-actions-hippie-is-from-p "alphor!~")
 
 Returns a closure that when evaluated with the right arguments, returns true when the event caused by the sender starts with "alphor!~"
 
-#### circe-actions-sent-to-p
+## circe-actions-sent-to-p
 Usage: (circe-actions-sent-to-p "alphor!~floor13@2604:140:76::5")
 
 Returns a closure that when evaluated with the right arguments, returns true when the event is targeted at "alphor!~floor13@2604:140:76::5"
 
-#### circe-actions-hippie-sent-to-p
+## circe-actions-hippie-sent-to-p
 Usage: (circe-actions-hippie-sent-to-p "alph")
 
 Returns a closure that when evaluated with the right arguments, returns true when the event is targeted at any nick that starts with "alph", including "alphor", "alph", but not "ALF" the [friendly extraterrestrial][]. He doesn't use IRC these days anyway.
 
 [friendly extraterrestrial]: https://en.wikipedia.org/wiki/ALF_(TV_series)
 
+# Event signatures
+Parameters are passed in the order described. If an event is not in this table, assume it follows the same signature as irc.message.
+
+| Event name  | Description | Parameters |
+| ----------- | ------------- | ------------:|
+| irc.message | Fired on every message or query | server-proc, event, fq-username, channel, contents |
 
 
-## Internals of circe-actions
+# Internals of circe-actions
 This part is long, and completely unnecessary to read if you're just using circe-actions to build your own extensions.
 
 As discussed in the walkthrough, Circe has an event handler table that holds all the events as keys and (possibly empty) lists as values. Circe-actions defines a primitive called ```circe-actions-activate-function``` which takes a function and a key of the handler table, and adds the function to right place in the event handler table. It keeps track of what functions were added in an association list, circe-actions-handlers-alist. When an action is deactivated, it is first looked for in the alist, and based on what key is stored there, it is deactivated in the key of the event handler table.
@@ -159,9 +166,3 @@ The handler generator function takes in the condition function, action function,
 
 The persistence case is exactly the same, except it is never deactivated. It must either be deactivated in the action function (preferably at the beginning to avoid the situation above), or not activated at all. An example is shown in [Non-callback-style registration](#Non-callback-style-registration).
 
-# Event signatures
-Parameters are passed in the order described. If an event is not in this table, assume it follows the same signature as irc.message.
-
-| Event name  | Description | Parameters |
-| ----------- | ------------- | ------------:|
-| irc.message | Fired on every message or query | server-proc, event, fq-username, channel, contents |

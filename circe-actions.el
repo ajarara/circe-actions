@@ -229,7 +229,6 @@ something is causing errors constantly"
 
 ;; -------------------- predicate functions --------------------
 
-;; all of the below functions need lexical binding enabled.
 (defun circe-actions-is-from-p (sender)
   "Return a condition-func appropriate for circe-actions-register that
 strictly compares the username behind the event with SENDER. 
