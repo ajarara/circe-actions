@@ -127,7 +127,7 @@ If persist is set, the procedure does not remove itself after being called once.
 				 action-function
 				 (circe-actions--gensym)
 				 event)
-			   persist)) ; if unset, persist is nil, the empty list
+			   (list persist))) ; if unset, persist is nil, the empty list
 	 (handler-function (apply 'circe-actions-generate-handler-function
 				  arg-list)))
     ;; to gain introspection, pass in condition function, activate function.
@@ -271,21 +271,6 @@ circe-actions-hippie-is-from-p"
   ;; unload functions from function namespace?
   (circe-actions-panic))
 
-;; unimplemented parts of the package
-;; (defvar circe-actions-inspect-arg-list '()
-;;   "A list of variables that were passed to circe-actions-inspect-args.")
-;; (defun circe-actions-inspect-args (&rest args)
-;;   "A utility function designed to show you what is passed to an
-;;   arbitrary handler. Was very useful when inspecting, so I thought
-;;   I'd leave it in here. Be warned with 30+ channels
-;;   circe-actions-inspect-arg-list grows mighty fast, if you're crazy
-;;   like me and use circe-actions-t as a condition-function-p"
-;;   (setq circe-actions-inspect-arg-list (cons args circe-actions-inspect-arg-list))
-;;   (message
-;;    (with-temp-buffer
-;;      (cl-prettyprint args)
-;;      (buffer-string)
-;;      )))
 
 (provide 'circe-actions)
 ;;; circe-actions.el ends here

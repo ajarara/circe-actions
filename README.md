@@ -16,10 +16,9 @@ Events can be messages, ctcp actions, nickserv ghosting, even [certain RPL codes
 - [Walkthrough](#walkthrough)
 - [Utility functions](#utility-functions)
 - [Non-callback style registration](#non-callback-style-registration)
-- [Internals of circe-actions](#internals-of-circe-actions)
-- [circe-actions-plistify](#circe-actions-plistify)
 - [Event signatures](#event-signatures)
 - [Parameter description](#parameter description)
+- [Internals of circe-actions](#internals-of-circe-actions)
 
 ## Walkthrough
 
@@ -102,7 +101,7 @@ Finally, there is no need to assign names to these one off functions, instead we
 Of course, there is another way to handle other non-callback use cases, see [non-callback-style registration](#non-callback-style-registration)
 
 ## circe-actions-panic
-In the case that something is tripping the debugger 3 times a second, you'll probably want this. It iterates through the alist holding all the registered functions and removes them from the handler table (and the alist). This function is also called when you call M-x disable-circe-actions.
+In the case that something is tripping the debugger 3 times a second, you'll probably want to call this. It iterates through the alist holding all the registered functions and removes them from the handler table (and the alist). This function is also called when you call M-x disable-circe-actions.
 
 # Utility functions
 Circe-actions takes the liberty of defining loads of helpful closures, to help you save every follicle in these trying times.
