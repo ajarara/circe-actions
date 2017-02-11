@@ -152,7 +152,8 @@ The only thing we have to keep in mind is that we have to handle the deactivatio
   (setq circe-event "irc.message") 
 
   (defun message-five-times-then-quit ()
-    "Generate and return a function that messages the next 5 messages passed to it, deactivating itself at the 5th (or greater) one."
+    "Generate and return a function that messages the next 5 messages
+    passed to it, deactivating itself at the 5th (or greater) one."
     (defalias function-symbol ; function-symbol is evaluated to get the symbol generated above
       (let ((count 0)) ; we increment this each time the lambda is called.
         (lambda (&rest arglist)
