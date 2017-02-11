@@ -16,7 +16,7 @@
 ;; added a $network parameter to allow you to do this, but it's
 ;; a relatively new addition. In any case, this will work if you use
 ;; the user field to instruct ZNC to connect to a specific
-;; network. The wiki explains this in the FAQ.
+;; network. The wiki explains this in the FAQ. (linked in docstring)
 (defvar zncirce-server-name-func
   (lambda ()
     (let ((nick-network (irc-connection-get (circe-server-process) :user)))
@@ -33,13 +33,6 @@ Finally, if you are on a very new version of ZNC (as of 12/24/16), you
 can also replace this sexp with: (lambda () \"$network\")
 
 ")
-
-;; hmm... another point of contention. Why does this work and not
-;; funcalling the variable of the same name?
-(defun zncirce-server-name-func ()
-  (let ((nick-network (irc-connection-get (circe-server-process) :user)))
-    (cadr (split-string nick-network "/"))))
-    
 
 
 (defalias 'zncirce-from-controlpanel-p
@@ -61,11 +54,17 @@ can also replace this sexp with: (lambda () \"$network\")
    number that can be active in the circe-actions-maximum-handlers
    defcustom."
   (interactive "b\np")
-  (let ((circe-callback-func
+  (let ((server-name (funcall zncirce-server-name-func))
+        (circe-callback-func
 	 (lambda ()
 	   (circe-actions-register 'zncirce-from-controlpanel-p
 				'circe-actions-irc-message-contents
 				"irc.message"))))
+    ;; why not call the callback function now if we're calling it
+    ;; independently of arg? because setting it prompts for a
+    ;; variable, which is interactive and thus could be exited out of,
+    ;; but the callback would already be registered. Kind of harmless,
+    ;; if it actually occurred, but so is doing it this way.
     (if (= arg 4)
 	;; arg is set, set variable for the channel.
 	(let ((buffervar (read-number "Number of messages to buffer: ")))
@@ -75,7 +74,7 @@ can also replace this sexp with: (lambda () \"$network\")
 	  ;; execute our query
 	  (circe-command-MSG "*controlpanel"
 			     (concat "setchan buffer $me "
-				     (zncirce-server-name-func)
+				     server-name
 				     " "
 				     buf
 				     " "
@@ -88,7 +87,7 @@ can also replace this sexp with: (lambda () \"$network\")
 	;; execute our query
 	(circe-command-MSG "*controlpanel"
 			   (concat "getchan buffer $me "
-				   (zncirce-server-name-func)
+				   server-name
 				   " "
 				   buf))))))
 
