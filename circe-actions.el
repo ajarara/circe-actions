@@ -140,6 +140,8 @@ If persist is set, the procedure does not remove itself after being called once.
     (circe-actions-activate-function handler-function event)))
 
 (defun circe-actions-is-active-p (handler-function event)
+  "Check if the handler function is on the handler table, and on the
+internal alist using equal."
   (and (circe-actions-handler-is-on-handler-table-p handler-function event)
        (circe-actions-handler-is-on-alist-p handler-function event)))
 
@@ -173,10 +175,10 @@ something is causing errors constantly"
 
   ;; calling
   (circe-actions-plistify '((circe-server-process)
-			     \"irc.message\"
-			     \"alphor!@~...\"
-			     \"#freenode\"
-			     \"Meow!\")
+                             \"irc.message\"
+                             \"alphor!@~...\"
+                             \"#freenode\"
+                             \"Meow!\")
                              \"irc.message\")
 
   ;; yields this
@@ -190,28 +192,28 @@ something is causing errors constantly"
   (unless event
     (setq event (nth 1 arglist))) ; if event is not set, obtain it from the arglist.
   ;; circe-actions--who-needs-dash is -interleave from dash.el
-  (circe-actions--who-needs-dash (gethash event
-					  circe-actions-event-plists
-					  circe-actions-default-event-signature)
-				 arglist))
+  (circe-actions--interleave (gethash event
+                                      circe-actions-event-plists
+                                      circe-actions-default-event-signature)
+                             arglist))
 
-(defun circe-actions--who-needs-dash (list-1 list-2)
+(defun circe-actions--interleave (list-1 list-2)
   "-interleave from dash.el does exactly this, but expanding the
   dependency graph just for this one use is a cost I'm not willing to
   pay. Error message reflects usage in circe-actions-plistify."
   (let ((xor-func (lambda (bool-1 bool-2)
-		    (or (and bool-1 (not bool-2))
-			(and (not bool-1) bool-2))))
-	(list-1-null (null list-1))
-	(list-2-null (null list-2)))
+                    (or (and bool-1 (not bool-2))
+                        (and (not bool-1) bool-2))))
+        (list-1-null (null list-1))
+        (list-2-null (null list-2)))
     (cond ((funcall xor-func list-1-null list-2-null)
-	   (error "circe-actions-plistify didn't plistify this event correctly! plist-keys: %s \n arglist: %s" list-1 list-2))
-	  ((null list-1) nil)
-	  (t
-	    (cons (car list-1)
-		  (cons (car list-2)
-			(circe-actions--who-needs-dash (cdr list-1)
-						       (cdr list-2))))))))
+           (error "circe-actions-plistify didn't plistify this event correctly! plist-keys: %s \n arglist: %s" list-1 list-2))
+          ((null list-1) nil)
+          (t
+           (cons (car list-1)
+                 (cons (car list-2)
+                       (circe-actions--interleave (cdr list-1)
+                                                  (cdr list-2))))))))
 
     
 
