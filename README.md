@@ -15,11 +15,11 @@ Events can be messages, ctcp actions, nickserv ghosting, even [certain RPL codes
 
 - [Walkthrough](#walkthrough)
 - [Utility functions](#utility-functions)
+- [Non-callback style registration](#non-callback-style-registration)
 - [Internals of circe-actions](#internals-of-circe-actions)
 - [circe-actions-plistify](#circe-actions-plistify)
 - [Event signatures](#event-signatures)
 - [Parameter description](#parameter description)
-- [Non-callback-style registration](#non-callback-style-registration)
 
 ## Walkthrough
 
@@ -71,7 +71,9 @@ We'd like to alert ourselves in the minibuffer of what was said:
     (message "Activity in #foo: %s" (plist-get :payload easy-args))))
 ```
 
-Easy enough, we just get the payload (think contents of a message) from easy-args and message it. Here's the equivalent without using plistify:
+Easy enough, we just get the payload (think contents of a message) from easy-args and message it.
+
+Here's the equivalent without using plistify:
 
 ``` elisp
 (defun spit-out-payload (_server-proc _event _fq-username _target payload)
@@ -85,7 +87,7 @@ Following along so far? Here's the hard part:
 (circe-actions-register 'activity-in-foo 'spit-out-payload)
 ```
 
-That's it. The next time activity-in-foo returns true (or non-nil), spit-out-payload is run with the same arguments.
+That's it. The next time you recieve a message satisfying activity-in-foo, spit-out-payload is run with the same arguments.
 
 This only occurs once. If you want it to persist, set the persist flag:
 
@@ -96,6 +98,7 @@ Notice the "t".
 
 Now _everytime_ someone says something in #foo, the minibuffer'll know about it. To disable all persistent handlers, M-x circe-actions-panic, or M-x circe-actions-disable gets rid of them. (As of now, there is no way to disable specific ones, as there isn't an easy way I can think of to present them to the user)
 
+Finally, there is no need to assign names to these one off functions, instead we can 
 Of course, there is another way to handle other non-callback use cases, see [non-callback-style registration](#non-callback-style-registration)
 
 ## circe-actions-panic
@@ -133,6 +136,59 @@ Usage: (circe-actions-hippie-sent-to-p "alph")
 Returns a closure that when evaluated with the right arguments, returns true when the event is targeted at any nick that starts with "alph", including "alphor", "alph", but not "ALF" the [friendly extraterrestrial][]. He doesn't use IRC these days anyway.
 
 [friendly extraterrestrial]: https://en.wikipedia.org/wiki/ALF_(TV_series)
+
+# Non-callback style registration
+
+Circe-actions is geared towards usage of callbacks. Register a function, do something that provokes a response, execute the function with the context of the response. However, it is definitely possible that we want to capture the nth event, or wait for a series of conditions to happen in order before doing something, or some other creative scenario. There are only two functions necessary to use here: circe-actions-activate, and circe-actions-deactivate.
+
+
+Activation of a function w.r.t a specific event makes it get called _every time_ the event occurs, with the same argument signature.
+
+The only thing we have to keep in mind is that we have to handle the deactivation step within the function (unless we don't want to deactivate the function, of course).
+``` elisp
+  ;; we need closures to illustrate this example without descending into madness
+  (setq lexical-binding t)
+  (setq function-symbol (gensym "arbitrary-"))
+  (setq circe-event "irc.message") 
+
+  (defun message-five-times-then-quit ()
+    "Generate and return a function that messages the next 5 messages passed to it, deactivating itself at the 5th (or greater) one."
+    (defalias function-symbol ; function-symbol is evaluated to get the symbol generated above
+      (let ((count 0)) ; we increment this each time the lambda is called.
+        (lambda (&rest arglist)
+          (let ((contents-of-message (nth 4 arglist)))
+            (message "%s" contents-of-message) ; see message warning in README
+            (setq count (1+ count))
+            (when (>= count 4) 
+              (circe-actions-deactivate-function function-symbol)))))))
+                      
+
+  ;; at this point, the only thing needed is to activate it.
+  (circe-actions-activate-function (message-five-times-then-quit) ; return a new independent closure
+                                   "irc.message")
+```
+
+Of course if you want to bind all this to a key you could wrap all of it in an interactive function, like so:
+
+``` elisp
+  (setq lexical-binding t)
+
+  (defun message-five-times-then-quit ()
+    (interactive)
+    (let ((function-symbol (gensym "arbitrary-"))
+          (event "irc.message")) 
+      (defalias function-symbol
+        (let ((count 0))
+          (lambda (&rest arglist)
+            (let ((contents-of-message (nth 4 arglist)))
+              (message "%s" contents-of-message)
+              (setq count (1+ count))
+              (when (>= count 4)
+                (circe-actions-deactivate-function function-symbol))))))
+      
+      (circe-actions-activate-function function-symbol event)))
+
+```
 
 # Event signatures
 Parameters are passed in the order described. If an event is not in this table, assume it follows the same signature as irc.message.
