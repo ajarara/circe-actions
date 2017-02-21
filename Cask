@@ -6,6 +6,11 @@
 (depends-on "circe" "irc")
 
 (development
-  (depends-on "buttercup")
-  (depends-on "ert"))
+  (depends-on "buttercup"))
   
+(package "circe-znc" "0.0.1" "A convenient interface to *controlpanel")
+
+(depends-on "circe" "irc" "circe-actions")
+
+(development
+  (depends-on "buttercup"))

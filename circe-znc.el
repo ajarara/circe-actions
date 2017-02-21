@@ -6,9 +6,9 @@
 ;; These functions make it very easy to do what you want.
 
 ;; not yet needed
-;; (require 'circe-actions)
+(require 'circe-actions)
 
-;; (require 'subr-x)
+(require 'subr-x)
 
 
 ;; (defvar circe-znc-status-table
