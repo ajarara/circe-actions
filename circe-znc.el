@@ -52,4 +52,5 @@
 ;; (circe-znc-module-help)
 
          
-    
+(provide 'circe-znc)
+;;; circe-znc.el ends here
