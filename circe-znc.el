@@ -11,28 +11,28 @@
 (require 'subr-x)
 
 
-;; (defvar circe-znc-status-table
-;;   nil
-;;   "")
+(defvar circe-znc-status-table
+  (make-hash-table)
+  "")
 
 
 
-;; (defvar circe-znc-controlpanel-table
-;;   (let ((hash-table (make-hash-table :test #'equal)))
-;;     (puthash "help" (lambda () (message "Test failed!")) hash-table)
-;;     hash-table)
-;;   "")
+(defvar circe-znc-controlpanel-table
+  (let ((hash-table (make-hash-table :test #'equal)))
+    (puthash "help" (lambda () (message "Test failed!")) hash-table)
+    hash-table)
+  "")
 
 
 ;; ;; it's kind of silly to make this a hash table if I query for the list everytime.
 ;; ;; the only time I would keep it a hash table is if the results were themselves
 ;; ;; interactive functions.
-;; (defvar circe-znc-modules-table
-;;   (let ((hash-table (make-hash-table :test #'equal)))
-;;     (puthash "*controlpanel" circe-znc-controlpanel-table hash-table)
-;;     (puthash "*status" circe-znc-status-table hash-table)
-;;     hash-table)
-;;   "A top level hash table linking modules to their options defined in the last version of ZNC (1.6.3).")
+(defvar circe-znc-modules-table
+  (let ((hash-table (make-hash-table :test #'equal)))
+    (puthash "*controlpanel" circe-znc-controlpanel-table hash-table)
+    (puthash "*status" circe-znc-status-table hash-table)
+    hash-table)
+  "A top level hash table linking modules to their options defined in the last version of ZNC (1.6.3).")
 
   
 ;; (defun circe-znc-module-help ()
