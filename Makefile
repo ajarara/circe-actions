@@ -1,4 +1,5 @@
 test:
 	emacs -batch -f package-initialize -f buttercup-run-discover
-
-PHONY: test
+casktest:
+	cask exec buttercup -L
+PHONY: test casktest

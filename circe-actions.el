@@ -100,7 +100,9 @@ circe-actions-handlers-alist (with a key of symbol and HANDLER), then
 place it at event in the hash-table obtained from circe's irc handler table."
   (let ((alist-len (length circe-actions-handlers-alist)))
     (if (>= alist-len circe-actions-maximum-handlers)
-	(warn "circe-actions: Handler tolerance of %s exceeded, nothing added to %s! Change " alist-len event)
+	(warn "circe-actions: Handler tolerance of %s exceeded, nothing added to %s! Clear active handlers or increase circe-actions-maximum-handlers to continue."
+              circe-actions-maximum-handlers
+              event)
       (progn
 	;; add the handler-function to the list
 	(setq circe-actions-handlers-alist
