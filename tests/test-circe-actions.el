@@ -125,8 +125,8 @@
 (describe "circe-actions-generate-handler-function"
   (it "should return a function"
     (expect (functionp
-             (circe-actions-generate-handler-function 'anything
-                                                      (lambda nil nil)
+             (circe-actions-generate-handler-function 'ignore
+                                                      'ignore
                                                       'some-symbol
                                                       "some.event"))))
   (it "should execute an action when the condition is satisfied"

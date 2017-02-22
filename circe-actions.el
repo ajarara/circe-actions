@@ -1,3 +1,4 @@
+;;; circe-actions.el --- Callback priitives for circe events
 ;;; -*- lexical-binding: t -*-
 
 ;; Utility functions for interfacing with circe-irc-handler-table
