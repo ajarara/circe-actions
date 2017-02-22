@@ -10,7 +10,6 @@
 (require 'irc)
 (require 'circe)
 
-
 (defgroup circe-actions nil
   "Convenient interface to circe events"
   :group 'convenience)
@@ -45,7 +44,6 @@
   (let ((hash-table (make-hash-table)))
     (puthash "irc.message" circe-actions-default-event-signature hash-table)
     ))
-
 
 (defun circe-actions-generate-handler-function
     (condition-p-function action-function symbol event &optional persist)
@@ -164,7 +162,7 @@ internal alist using equal."
 functions stored in the alist. This is the function you want to run if
 something is causing errors constantly"
   (interactive)
-  (mapcar (lambda (handler-list)
+  (mapc (lambda (handler-list)
 	    (let ((handler (car handler-list))
 		  (event (cadr handler-list)))
 	      (circe-actions-deactivate-function handler event)))
