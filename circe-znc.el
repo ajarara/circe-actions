@@ -1,5 +1,8 @@
-
 ;;; circe-znc.el --- A convenient interface to *controlpanel
+
+;; Author: alphor
+;; Version: 0.0.1
+;; Keywords: circe znc
 
 ;; This set of functions requires you to have the controlpanel module enabled.
 ;; The neat thing about the controlpanel module is that it allows you to message
@@ -37,7 +40,6 @@
     hash-table)
   "A top level hash table linking modules to their options defined in the last version of ZNC (1.6.3).")
 
-  
 ;; (defun circe-znc-module-help ()
 ;;   "Prompt for a module, call the help function of that modules table."
 ;;   (interactive)

@@ -3,8 +3,8 @@
 (require 'subr-x)
 
 (describe "circe-actions"
-  (it "is being tested against the right version."
-    (expect circe-actions-version :to-equal "0.0.14")))
+  (it "should have lexical binding enabled"
+    (expect lexical-binding :to-be t)))
 
 (describe "circe-actions-t"
   (it "should return true independent of the arguments"
@@ -125,16 +125,15 @@
 (describe "circe-actions-generate-handler-function"
   (it "should return a function"
     (expect (functionp
-             (circe-actions-generate-handler-function 'ignore
-                                                      'ignore
+             (circe-actions-generate-handler-function (lambda nil nil)
+                                                      (lambda nil nil)
                                                       'some-symbol
                                                       "some.event"))))
   (it "should execute an action when the condition is satisfied"
     (let* ((lever)
            (handler-func
             (circe-actions-generate-handler-function (lambda (&rest args)
-                                                       (and (car args)
-                                                            (cadr args)))
+                                                       (car args))
                                                      (lambda (&rest args)
                                                        (setq lever (not lever)))
                                                      'some-symbol

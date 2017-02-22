@@ -1,5 +1,10 @@
-;;; circe-actions.el --- Callback priitives for circe events
 ;;; -*- lexical-binding: t -*-
+
+;;; circe-actions.el --- Callback primitives for circe events
+
+;; Author: alphor
+;; Version: 0.0.2
+;; Keywords: circe callback handler
 
 ;; Utility functions for interfacing with circe-irc-handler-table
 (require 'irc)
@@ -31,8 +36,6 @@
 ;; primarily designed to deal with irc.message-like events (irc.ctcp
 ;; is also included). Later on it may be necessary to change this.
 
-(defconst circe-actions-version "0.0.14")
-  
 (defconst circe-actions-default-event-signature
   (list :server-proc :event :fq-username :target :payload)
   "Default list of symbols obtained if there is no match in circe-actions-event-plists for the event.")
