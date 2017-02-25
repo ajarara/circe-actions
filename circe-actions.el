@@ -7,6 +7,7 @@
 ;; Keywords: circe callback handler
 
 ;; Utility functions for interfacing with circe-irc-handler-table
+
 (require 'irc)
 (require 'circe)
 
@@ -41,7 +42,7 @@
 
 ;; should be set to nil and populated on circe-actions-enable?
 (defvar circe-actions-event-plists
-  (let ((hash-table (make-hash-table)))
+  (let ((hash-table (make-hash-table :test 'equal)))
     (puthash "irc.message" circe-actions-default-event-signature hash-table)
     ))
 
@@ -195,7 +196,6 @@ something is causing errors constantly"
 "
   (unless event
     (setq event (nth 1 arglist))) ; if event is not set, obtain it from the arglist.
-  ;; circe-actions--who-needs-dash is -interleave from dash.el
   (circe-actions--interleave (gethash event
                                       circe-actions-event-plists
                                       circe-actions-default-event-signature)

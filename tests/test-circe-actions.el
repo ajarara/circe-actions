@@ -118,14 +118,14 @@
       (expect (symbol-name some-sym) :to-equal (symbol-name handler-func)))))
 
 
-(xdescribe "circe-actions-generate-handler-function"
+(describe "circe-actions-generate-handler-function"
   (it "should return a function"
     (expect (functionp
              (circe-actions-generate-handler-function (lambda nil nil)
                                                       (lambda nil nil)
                                                       'some-symbol
                                                       "some.event"))))
-  (it "should execute an action when the condition is satisfied"
+  (xit "should execute an action when the condition is satisfied"
     (let* ((lever)
            (handler-func
             (circe-actions-generate-handler-function (lambda (&rest args)

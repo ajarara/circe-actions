@@ -1,3 +1,5 @@
+;;; -*- lexical-binding: t -*-
+
 ;;; circe-znc.el --- A convenient interface to *controlpanel
 
 ;; Author: alphor
@@ -11,10 +13,10 @@
 ;; tedious.
 ;; These functions make it very easy to do what you want.
 
-;; not yet needed
 (require 'circe-actions)
 
-(require 'subr-x)
+;; not yet needed
+;; (require 'subr-x)
 
 
 (defvar circe-znc-status-table
