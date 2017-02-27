@@ -19,8 +19,10 @@
 ;; (require 'subr-x)
 
 
+
 (defvar circe-znc-status-table
-  (make-hash-table)
+  (let ((hash-table (make-hash-table :test #'equal)))
+    (puthash "help" (lambda () (message "Test passed!")) hash-table))
   "")
 
 
@@ -52,12 +54,11 @@
 ;;          (module-table (gethash module circe-znc-modules-table)))
 ;;     (funcall (gethash "help" module-table))))
 
-;; (gethash "*controlpanel" circe-znc-modules-table)
-
-;; (hash-table-keys circe-znc-modules-table)
-
-;; (circe-znc-module-help)
-
+(defvar circe-znc-collect-timeout 10
+  "Number of seconds to wait before deactivating listener for some ZNC output.
+Raise this if output is cut off, lower this ")
+;; (defun circe-znc--collect-response-in-buf ()
+  
          
 (provide 'circe-znc)
 ;;; circe-znc.el ends here
