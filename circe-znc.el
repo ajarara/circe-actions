@@ -66,22 +66,15 @@ Raise this if output is cut off (ie missing help messages)")
     ;; pop-to-buffer instead?
     (display-buffer buffer)))
 
-(defun circe-znc-get-buffer-create (bufname)
-  "If circe-znc--output-stale is set, reinitialize the buffer.
-This means that the associated handler has been deactivated!
-(An alternate implementation might be to associate the symbol as a buffer-local variable and simply check if the assoc handler is deactivated.)
-Otherwise simply return the buffer."
-    
+;; (defun circe-znc-get-buffer-create (bufname)
+;;   "If circe-znc--output-stale is set, reinitialize the buffer.
+;; This means that the associated handler has been deactivated!
+;; (An alternate implementation might be to associate the symbol as a buffer-local variable and simply check if the assoc handler is deactivated.)
+;; Otherwise simply return the buffer."
+;;     nil)   
          
     
     
 
-(defun circe-znc-generic-help-func (module-name)
-  ""
-  (let ((sym (circe-actions--gensym)))
-    (
-
-    (
-  
-(provide 'circe-znc)
+(Provide 'circe-znc)
 ;;; circe-znc.el ends here
