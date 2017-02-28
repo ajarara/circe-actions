@@ -14,11 +14,7 @@
 ;; These functions make it very easy to do what you want.
 
 (require 'circe-actions)
-
-;; not yet needed
-;; (require 'subr-x)
-
-
+(require 'subr-x)
 
 (defvar circe-znc-status-table
   (let ((hash-table (make-hash-table :test #'equal)))
@@ -26,6 +22,9 @@
   "")
 
 
+(defvar circe-znc-collect-timeout 10
+  "Number of seconds to wait before deactivating listener for some ZNC output.
+Raise this if output is cut off (ie missing help messages)")
 
 (defvar circe-znc-controlpanel-table
   (let ((hash-table (make-hash-table :test #'equal)))
@@ -44,21 +43,45 @@
     hash-table)
   "A top level hash table linking modules to their options defined in the last version of ZNC (1.6.3).")
 
-;; (defun circe-znc-module-help ()
-;;   "Prompt for a module, call the help function of that modules table."
-;;   (interactive)
-;;   (let* ((module (completing-read "Module\: "
-;;                                   (hash-table-keys circe-znc-modules-table)
-;;                                   nil
-;;                                   t))
-;;          (module-table (gethash module circe-znc-modules-table)))
-;;     (funcall (gethash "help" module-table))))
+(defun circe-znc-module-help ()
+  "Prompt for a module, call the help function of that modules table."
+  (interactive)
+  (let* ((module (completing-read "Module\: "
+                                  (hash-table-keys circe-znc-modules-table)
+                                  nil
+                                  t))
+         (module-table (gethash module circe-znc-modules-table)))
+    (funcall (gethash "help" module-table))))
 
-(defvar circe-znc-collect-timeout 10
-  "Number of seconds to wait before deactivating listener for some ZNC output.
-Raise this if output is cut off, lower this ")
-;; (defun circe-znc--collect-response-in-buf ()
-  
+
+(defun circe-znc--collect-response-in-buf (bufname string)
+  "if no buffer, create it and display it.
+
+   Append string to buffer."
+  (let ((buffer (circe-znc-get-buffer-create bufname)))
+    (with-current-buffer buffer
+      (setq buffer-read-only nil)
+      (insert string)
+      (setq buffer-read-only t))
+    ;; pop-to-buffer instead?
+    (display-buffer buffer)))
+
+(defun circe-znc-get-buffer-create (bufname)
+  "If circe-znc--output-stale is set, reinitialize the buffer.
+This means that the associated handler has been deactivated!
+(An alternate implementation might be to associate the symbol as a buffer-local variable and simply check if the assoc handler is deactivated.)
+Otherwise simply return the buffer."
+    
          
+    
+    
+
+(defun circe-znc-generic-help-func (module-name)
+  ""
+  (let ((sym (circe-actions--gensym)))
+    (
+
+    (
+  
 (provide 'circe-znc)
 ;;; circe-znc.el ends here

@@ -1,6 +1,7 @@
 ;;; -*- lexical-binding: t -*-
 
-;;; circe-actions.el --- Callback primitives for circe events
+;; circe-actions.el --- Callback primitives for circe events
+
 
 ;; Author: alphor
 ;; Version: 0.0.2
@@ -14,6 +15,7 @@
 (defgroup circe-actions nil
   "Convenient interface to circe events"
   :group 'convenience)
+
 
 (defcustom circe-actions-maximum-handlers 3
   "Do not allow more than this many active handlers. This number is

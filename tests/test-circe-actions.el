@@ -1,3 +1,4 @@
+;;; -*- lexical-binding: t -*-
 
 (require 'circe-actions)
 (require 'subr-x)
@@ -125,7 +126,8 @@
                                                       (lambda nil nil)
                                                       'some-symbol
                                                       "some.event"))))
-  (xit "should execute an action when the condition is satisfied"
+  ;; lexical binding behaving finicky here.
+  (it "should execute an action when the condition is satisfied"
     (let* ((lever)
            (handler-func
             (circe-actions-generate-handler-function (lambda (&rest args)
