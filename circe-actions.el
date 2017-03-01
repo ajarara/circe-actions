@@ -1,6 +1,6 @@
 ;;; -*- lexical-binding: t -*-
 
-;; circe-actions.el --- Callback primitives for circe events
+;;; circe-actions.el --- Callback primitives for circe events
 
 
 ;; Author: alphor
@@ -43,6 +43,7 @@
   "Default list of symbols obtained if there is no match in circe-actions-event-plists for the event.")
 
 ;; should be set to nil and populated on circe-actions-enable?
+;; isn't that what autoload does?
 (defvar circe-actions-event-plists
   (let ((hash-table (make-hash-table :test 'equal)))
     (puthash "irc.message" circe-actions-default-event-signature hash-table)

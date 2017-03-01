@@ -57,24 +57,37 @@ Raise this if output is cut off (ie missing help messages)")
 (defun circe-znc--collect-response-in-buf (bufname string)
   "if no buffer, create it and display it.
 
-   Append string to buffer."
-  (let ((buffer (circe-znc-get-buffer-create bufname)))
+   Insert string at end of buffer."
+  (let ((buffer (circe-znc--get-buffer-create bufname)))
     (with-current-buffer buffer
-      (setq buffer-read-only nil)
-      (insert string)
-      (setq buffer-read-only t))
+      (let ((buffer-read-only nil))
+        (insert string)))
     ;; pop-to-buffer instead?
     (display-buffer buffer)))
 
-;; (defun circe-znc-get-buffer-create (bufname)
-;;   "If circe-znc--output-stale is set, reinitialize the buffer.
-;; This means that the associated handler has been deactivated!
-;; (An alternate implementation might be to associate the symbol as a buffer-local variable and simply check if the assoc handler is deactivated.)
-;; Otherwise simply return the buffer."
-;;     nil)   
-         
-    
-    
+ (defun circe-znc--get-buffer-create (bufname)
+   "If circe-znc--output-stale is set, clear the buffer.
+ This means that the associated handler has been deactivated!
+ (An alternate implementation might be to associate the symbol as a
+ buffer-local variable and simply check if the assoc handler is
+ deactivated.)
+ Otherwise simply return the buffer."
+   (if (get-buffer bufname) ; returns nil if it doesn't exist or killed
+       (with-current-buffer bufname
+         (if (funcall circe-znc--is-live-p) ; is buffer's handler still alive?
+             bufname 
+           (kill-buffer bufname)
+           (circe-znc--get-buffer-create bufname)))
+     (let ((newbuf (generate-new-buffer bufname)))
+       (with-current-buffer newbuf
+         (circe-znc-output-mode)
+         (setq-local circe-znc--is-live-p (lambda () nil)) ; initialize live-p
+         newbuf))))
+       
+(define-derived-mode circe-znc-output-mode
+  special-mode
+  "*ZNC Command Output*"
+  "a (very) thin wrapper around special-mode")
 
-(Provide 'circe-znc)
+(provide 'circe-znc)
 ;;; circe-znc.el ends here
