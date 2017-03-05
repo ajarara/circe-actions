@@ -34,7 +34,6 @@
     hash-table)
   "")
 
-
 ;; it's kind of silly to make this a hash table if I query for the list everytime.
 ;; the only time I would keep it a hash table is if the results were themselves
 ;; interactive functions.
@@ -62,6 +61,7 @@
    Insert string at end of buffer."
   (let ((buffer (circe-znc--get-buffer-create bufname)))
     (with-current-buffer buffer
+      ;; is this the right way to output to a read only buffer?
       (let ((buffer-read-only nil))
         (insert string)))
     ;; pop-to-buffer instead?
@@ -90,7 +90,6 @@
 (defvar circe-znc--help-sentinels
   (let ((table (make-hash-table :test #'equal)))
     (puthash "*controlpanel" '(:re "^+=\+\\+=\+\\+$" :times 3) table) ; thank computer jesus for re-builder
-    (puthash "test" '(:re "5" :times 3) table)
     table)
   "set of conditions that determine if help output has ceased. As of now only supports :re and :times as conditions, eventual support for custom timeouts.")
 
@@ -109,6 +108,8 @@ Planned: generate get time of closure generation. If time differs by circe-znc-c
           (if (<= times matches)
               t
             (setq matches (1+ matches)))))))
+
+
 
 (define-derived-mode circe-znc-output-mode
   special-mode

@@ -26,35 +26,7 @@ A start would be getting nice looking help buffers. Set a callback, query for he
 ** DONE Fix % bug in circe-actions-message-contents
 If you don't want to format the string, (message "%s" VALUE). This avoids any bugs if someone sends a message with % in it.
 
-** TODO ZNC's aversion to git
-ZNC sports a config file, but users are discouraged from editing it directly, instead being pointed to using the web admin panel. I've disabled the web admin panel pointing on public IP addresses (which funnily enough required me editing the config file by hand), only allowing those with SSH access to use it (using SSH tunneling to forward ports to localhost)
-
-Unfortunately, this means that any configuration I make towards ZNC is not reproducible. Unless, I have some way to get that configuration file, and put it into version control. There are two ways I'm thinking of doing this:
-
-*** Remote git
-ZNC sports a commandline interface for administrators to use. This is kind of scary, specifically because I don't change my IRC password /that/ often and I know someone even mildly security oriented is already shaking their head.
-
-The gist of it is that I put the git repository in the server holding the config file, and use some git transport mechanism (likely either through circe or ssh) to clone the repo locally.
-
-**** Pros
-Well it does the job
-
-**** Cons
-I really don't want the commandline interface to be enabled, it's far too large of an attack vector for my paranoia.
-
-Further, it's complicated. I'd need to have some way to transport commit messages (or auto generate them, but that is useless when it comes to diagnostics), then some way to get the repo over here (without cloning it to some external git repo, as this contains plaintext passwords).
-
-*** Write a module that retrieves the file and returns it over IRC
-This is less disastrous. I don't need git to exist on the remote server, and don't need anything besides the ability to retrieve a single file (the only goodies of the file are the irc passwords, which you would already have access to if you know the ZNC admin password)
-
-**** Pros
-MUCH less security risk
-Modules can be written in Python, which I am familiar with
-
-**** Cons
-More time investment.
-
-
-
+** wontfix: ZNC's aversion to git
+Initially there was going to be some sort of module to access the contents of ZNC's config. This isn't really something that is worth the investment that isn't solved reasonably well by SSHFS (which allows me to use magit).
 
 ** TODO Move github presentation to circe-znc

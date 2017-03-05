@@ -127,6 +127,7 @@
                                                       'some-symbol
                                                       "some.event"))))
   ;; lexical binding behaving finicky here.
+  ;; DISABLED FIX
   (it "should execute an action when the condition is satisfied"
     (let* ((lever)
            (handler-func
@@ -208,7 +209,9 @@
       (expect :not (circe-actions-handler-is-on-handler-table-p symbol event)))))
 
 
-(xdescribe "circe-actions-generate persistence-test"
+;; lexical binding shenanigans
+;; DISABLED FIX
+(describe "circe-actions-generate persistence-test"
   (it "once generated and activated, they do not deactivate themselves."
     (let* ((circe-actions-handlers-alist)
           (circe--irc-handler-table (circe-irc-handler-table))

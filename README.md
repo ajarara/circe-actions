@@ -97,7 +97,18 @@ Notice the "t".
 
 Now _everytime_ someone says something in #foo, the minibuffer'll know about it. To disable all persistent handlers, M-x circe-actions-panic, or M-x circe-actions-disable gets rid of them. (As of now, there is no way to disable specific ones, as there isn't an easy way I can think of to present them to the user)
 
-Finally, there is no need to assign names to these one off functions, instead we can 
+Finally, there is no need to assign names to these one off functions, instead we can put them in lambdas:
+``` elisp
+(circe-actions-register (lambda (&rest args)
+                          (let ((easy-args (circe-actions-plistify args "irc.message")))
+                            (equal (plist-get :target easy-args)
+                                   "#foo")))
+                        (lambda (&rest args)
+                          (let ((easy-args (circe-actions-plistify args "irc.message")))
+                            (message "Activity in #foo: %s" (plist-get :payload easy-args))))
+                        t)
+```
+
 Of course, there is another way to handle other non-callback use cases, see [non-callback-style registration](#non-callback-style-registration)
 
 ## circe-actions-panic
