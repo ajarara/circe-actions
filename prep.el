@@ -1,5 +1,5 @@
 ;; file to prep project state for testing
 (package-initialize)
 
-(let ((project-path "~/proj/circe-znc/"))
+(let ((project-path default-directory))
   (add-to-list 'load-path project-path))

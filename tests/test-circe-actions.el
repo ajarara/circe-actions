@@ -126,8 +126,6 @@
                                                       (lambda nil nil)
                                                       'some-symbol
                                                       "some.event"))))
-  ;; lexical binding behaving finicky here.
-  ;; DISABLED FIX
   (it "should execute an action when the condition is satisfied"
     (let* ((lever)
            (handler-func
