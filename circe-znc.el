@@ -19,7 +19,8 @@
 
 (defvar circe-znc-status-table
   (let ((hash-table (make-hash-table :test #'equal)))
-    (puthash "help" (lambda () (message "Test passed!")) hash-table))
+    (puthash "help" (lambda () (message "Test passed!")) hash-table)
+    hash-table)
   "")
 
 
@@ -32,27 +33,40 @@
   (let ((hash-table (make-hash-table :test #'equal)))
     (puthash "help" (lambda () (message "Test failed!")) hash-table)
     hash-table)
-  "")
+  "Do NOT access this directly. Instead, use `circe-znc-get-command'")
 
-;; it's kind of silly to make this a hash table if I query for the list everytime.
-;; the only time I would keep it a hash table is if the results were themselves
-;; interactive functions.
 (defvar circe-znc-modules-table
   (let ((hash-table (make-hash-table :test #'equal)))
     (puthash "*controlpanel" circe-znc-controlpanel-table hash-table)
     (puthash "*status" circe-znc-status-table hash-table)
     hash-table)
-  "A top level hash table linking modules to their options defined in the last version of ZNC (1.6.3).")
+  "A top level hash table linking modules to their options defined in the last version of ZNC (1.6.3). Do not access this directly! Instead use `circe-znc-get-command-table'. This is to allow for modification of this table down the line.")
 
-(defun circe-znc-module-help ()
+(defun circe-znc-get-command-table (module-name)
+  "Get the hash table of a specific ZNC module, given its name."
+  
+  (gethash module-name circe-znc-modules-table))
+
+(defun circe-znc-get-command (module-name command)
+  "Get appropriate command from module, given its name. Usage:
+  (circe-znc-get-command \"*status\" \"broadcast\")
+  => (lambda (&optional broadcast-string) ...)"
+  
+  (let ((module-commands (gethash module-name circe-znc-modules-table)))
+    (gethash command module-commands)))
+     
+(defun circe-znc-module-help (&optional module)
   "Prompt for a module, call the help function of that modules table."
   (interactive)
-  (let* ((module (completing-read "Module\: "
+  ;; should I wrap this and the next let-expr in a let*?
+  ;; it's for sure uglier looking
+  (when (not module)
+    (setq module (completing-read "Module\: "
                                   (hash-table-keys circe-znc-modules-table)
                                   nil
-                                  t))
-         (module-table (gethash module circe-znc-modules-table)))
-    (funcall (gethash "help" module-table))))
+                                  t)))
+  (funcall (gethash "help"
+                    (circe-znc-get-command-table module))))
 
 
 (defun circe-znc--collect-response-in-buf (bufname string)
@@ -86,10 +100,10 @@
         (setq-local circe-znc--is-live-p (lambda () nil)) ; initialize live-p
         newbuf))))
        
-
 (defvar circe-znc--help-sentinels
   (let ((table (make-hash-table :test #'equal)))
-    (puthash "*controlpanel" '(:re "^+=\+\\+=\+\\+$" :times 3) table) ; thank computer jesus for re-builder
+    ;; thank computer jesus for re-builder
+    (puthash "*controlpanel" '(:re "^+=\+\\+=\+\\+$" :times 3) table)
     table)
   "set of conditions that determine if help output has ceased. As of now only supports :re and :times as conditions, eventual support for custom timeouts.")
 
@@ -108,8 +122,6 @@ Planned: generate get time of closure generation. If time differs by circe-znc-c
           (if (<= times matches)
               t
             (setq matches (1+ matches)))))))
-
-
 
 (define-derived-mode circe-znc-output-mode
   special-mode

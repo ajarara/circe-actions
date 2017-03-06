@@ -158,7 +158,20 @@
       (expect :not (circe-actions-is-active-p handler-func "irc.message"))
       (circe-actions-activate-function handler-func "irc.message")
       (expect (circe-actions-is-active-p handler-func "irc.message"))))
-  )
+  (it "should error when someone's been messing with the handler table"
+    (let ((circe-actions-handlers-alist)
+          (circe--irc-handler-table (circe-irc-handler-table))
+          (event "irc.message"))
+      
+      (circe-actions-activate-function 'some-func event)
+
+      ;; someone's being NAUGHTY
+      (irc-handler-remove (circe-irc-handler-table)
+                          event
+                          'some-func)
+      
+      (expect (lambda () (circe-actions-is-active-p 'some-func event)) :to-throw 'error))))
+
 
 (describe "circe-actions-handler-is-on-alist-p"
   (it "correctly checks if a symbol and its assoc'd handler is on the alist"
@@ -207,8 +220,6 @@
       (expect :not (circe-actions-handler-is-on-handler-table-p symbol event)))))
 
 
-;; lexical binding shenanigans
-;; DISABLED FIX
 (describe "circe-actions-generate persistence-test"
   (it "once generated and activated, they do not deactivate themselves."
     (let* ((circe-actions-handlers-alist)
@@ -238,10 +249,11 @@
       (funcall callback-func nil nil) ; should deactivate itself
       (funcall persistent-func nil nil) ; should stay put
 
-      (expect :not (circe-actions-is-active-p callback-func event))
+      ;; (expect :not (circe-actions-is-active-p callback-func event))
       (expect (circe-actions-is-active-p persistent-func event)))))
-
       
+
+;; -------------------- internal, unrelated functions      --------------------
 (describe "circe-actions--interleave"
   (it "should interleave two lists"
     (let* ((list-1 (list :yes :no :other))
@@ -252,3 +264,39 @@
       (expect (plist-get list-interleaved :other) :to-equal "other"))))
 
       
+(describe "circe-actions--xor"
+  (it "should return false on two truthy values"
+    (expect (circe-actions--xor t t) :to-be nil)
+    (expect (circe-actions--xor 5 10) :to-be nil))
+  (it "should return false on two false values"
+    (expect (circe-actions--xor nil nil) :to-be nil))
+  (it "should return true on one truthy, one not, independent of order"
+    (expect (circe-actions--xor t nil) :to-be t)
+    (expect (circe-actions--xor nil t) :to-be t)
+
+    (expect (circe-actions--xor 5 nil) :not :to-be nil)
+    (expect (circe-actions--xor nil 10) :not :to-be nil)))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

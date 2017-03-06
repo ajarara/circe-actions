@@ -149,9 +149,19 @@ If persist is set, the procedure does not remove itself after being called once.
 
 (defun circe-actions-is-active-p (handler-function event)
   "Check if the handler function is on the handler table, and on the
-internal alist using equal."
-  (and (circe-actions-handler-is-on-handler-table-p handler-function event)
-       (circe-actions-handler-is-on-alist-p handler-function event)))
+internal alist using equal.
+   Error if exclusively one of these are true"
+  (let ((on-handler-table
+         (circe-actions-handler-is-on-handler-table-p handler-function event))
+        (on-alist
+         (circe-actions-handler-is-on-alist-p handler-function event)))
+    (when (circe-actions--xor on-handler-table on-alist)
+        (error "Exceptional event! ht: %s al: %s hf: %s ev: %s"
+               on-handler-table
+               on-alist
+               handler-function
+               event))
+    (and on-handler-table on-alist)))
 
 (defun circe-actions-handler-is-on-alist-p (handler-function event)
   (member (list handler-function event)
@@ -204,6 +214,10 @@ something is causing errors constantly"
                                       circe-actions-default-event-signature)
                              arglist))
 
+(defun circe-actions--xor (bool-1 bool-2)
+  (or (and bool-1 (not bool-2))
+      (and (not bool-1) bool-2)))
+           
 (defun circe-actions--interleave (list-1 list-2)
   "-interleave from dash.el does exactly this, but expanding the
   dependency graph just for this one use is a cost I'm not willing to
