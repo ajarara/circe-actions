@@ -17,7 +17,7 @@ Events can be messages, ctcp actions, nickserv ghosting, even [certain RPL codes
 - [Utility functions](#utility-functions)
 - [Non-callback style registration](#non-callback-style-registration)
 - [Event signatures](#event-signatures)
-- [Parameter description](#parameter description)
+- [Parameter description](#parameter-description)
 - [Internals of circe-actions](#internals-of-circe-actions)
 
 ## Walkthrough
