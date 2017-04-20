@@ -1,5 +1,5 @@
 # circe-actions.el
-> IRC callback registration with minimal hair loss.
+> IRC event handling with minimal hair loss.
 
 [Circe][] is an IRC client for emacs sporting what most would call sane defaults. It has lots of features, not least of which is the ability to run arbitrary elisp code on many events.
 
@@ -22,7 +22,7 @@ Events can be messages, ctcp actions, nickserv ghosting, even [certain RPL codes
 
 ## Walkthrough
 
-First off, Circe has a hash table accessed by ```circe-irc-handler-table``` that has events as keys and functions as values.
+Circe has a hash table accessed by ```circe-irc-handler-table``` that has events as keys and functions as values.
 
 Being an IRC client, Circe is naturally responsible for handling all sorts of IRC events. When it handles an event, it also runs everything in circe-irc-handler-table associated with the type of the event, and passes them arguments. Circe doesn't care about the return values of the statements, all it does is hope that they run without error (because then Circe can't finish processing the event.)
 
@@ -207,6 +207,8 @@ Parameters are passed in the order described. If an event is not in this table, 
 | Event name  | Description | Parameters |
 | ----------- | ------------- | ------------:|
 | irc.message | Fired on every message or query | server-proc, event, fq-username, channel, contents |
+
+If there is a different signature, please open an issue or a PR, both are welcome!
 
 
 # Internals of circe-actions

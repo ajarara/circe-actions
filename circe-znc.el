@@ -126,7 +126,7 @@ Planned: generate get time of closure generation. If time differs by circe-znc-c
 (define-derived-mode circe-znc-output-mode
   special-mode
   "*ZNC Command Output*"
-  "a (very) thin wrapper around special-mode")
+  "a (very) thin wrapper around `special-mode'")
 
 (provide 'circe-znc)
 ;;; circe-znc.el ends here

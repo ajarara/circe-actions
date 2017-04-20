@@ -1,3 +1,5 @@
+;;; -*- lexical-binding: t -*-
+
 ;; This set of functions requires you to have the controlpanel module enabled.
 ;; The neat thing about the controlpanel module is that it allows you to message
 ;; commands that modify configuration that would require you to use the web front
