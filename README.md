@@ -17,8 +17,8 @@ Events can be messages, ctcp actions, nickserv ghosting, even [certain RPL codes
 - [Utility functions](#utility-functions)
 - [Non-callback style registration](#non-callback-style-registration)
 - [Event signatures](#event-signatures)
-- [Parameter description](#parameter-description)
 - [Internals of circe-actions](#internals-of-circe-actions)
+- [Additional notes](#additional-notes)
 
 ## Walkthrough
 
@@ -239,4 +239,52 @@ In the first case, suppose we have a callback oriented use case, so we do NOT se
 The handler generator function takes in the condition function, action function, a (in this case, generated and uninterned) symbol, and the event and constructs a function, returning it. It does NOT activate it. The generated function, when called (ie when on the handler table) applies the condition function to the arguments. When it returns non-nil, it immediately deactivates itself, and _then_ applies the same arguments to the action function. This is in case the action function takes long enough that the same event is emitted twice, causing it to be called again.
 
 The persistence case is exactly the same, except it is never deactivated. It must either be deactivated in the action function (preferably at the beginning to avoid the situation above), or not activated at all. An example is shown in [Non-callback-style registration](#Non-callback-style-registration).
+
+
+# Additional notes
+Usage of circe-actions-plistify isn't the best interface. Ideally I'd like calls to register handler functions like this:
+
+``` elisp
+(circe-actions-register
+ (with-circe-actions-closure
+  (= :payload "Hello!"))
+ (with-circe-actions-closure
+  (circe-command-MSG :user "Howdy!")))
+```
+Circe-actions-plistify is already agnostic to events, and it seems most events use the same call signature anyway, so it would make for a great utility to translate the above block into actual calls. 
+
+This makes it super convenient to use in a keybind without worrying about all sorts of details:
+
+``` elisp
+(defun my-circe-greeting-bind ()
+  (local-set-key
+   (kbd "C-c q")
+   (lambda () (interactive)
+     (circe-actions-register
+      (with-circe-actions-closure
+       (= :payload "Hello!"))
+      (with-circe-actions-closure
+       (circe-command-MSG :target "Howdy!"))
+       "irc.message"))))
+(add-hook `circe-mode-hook `my-circe-greeting)
+```
+
+This would expand to:
+``` elisp
+(defun my-circe-greeting ()
+  (local-set-key
+   (kbd "C-c q")
+   (lambda ()
+     (interactive)
+     (circe-actions-register
+      (lambda (&rest args)
+        (let ((easy-args (circe-actions-plistify args)))
+          (= (plist-get easy-args :payload) "Hello!")))
+      (lambda (&rest args)
+        (let ((easy-args (circe-actions-plistify args)))
+          (circe-command-MSG (plist-get easy-args :target) "Howdy!")))
+          "irc.message"))))
+```
+
+A significant improvement. Barriers to implementing this are figuring out how to replace symbols like :symbol with the respective (plist-get easy-args :symbol) call. This isn't a trivial macro, and I'm not totally comfortable with writing them in the first place, but it would be a great finishing touch that would make this project something to be proud of.
 
