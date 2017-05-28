@@ -289,3 +289,5 @@ This would expand to:
 
 The first block is a significant improvement to the second (the way it is now). Barriers to implementing this are figuring out how to replace symbols like :symbol with the respective (plist-get easy-args :symbol) call. This isn't a trivial macro, and I'm not totally comfortable with writing them in the first place, but it would be a great finishing touch that would make this project something to be proud of.
 
+
+After implementing the above, an additional nicety would be to emulate iptables chains. This cuts down on the problem of 'how to interactively remove errant rules'

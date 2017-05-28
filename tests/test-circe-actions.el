@@ -273,22 +273,28 @@
     (expect (circe-actions--replace-prefixed-string
              ":!snicket" ":!") :to-equal ":snicket")))
 
-(describe "circe-actions--deep-map"
+(describe "circe-actions--deep-map-kw"
   (let ((sym-to-string (lambda (x) (symbol-name x))))
-  (it "should behave like mapcar on flat lists of symbols"
-    (let ((ex-list `(this is a bunch of symbols)))
-      (expect (circe-actions--deep-map sym-to-string ex-list) :to-equal
+  (it "should behave like mapcar on flat lists of keywords"
+    (let ((ex-list `(:this :is :a :bunch :of :keywords)))
+      (expect (circe-actions--deep-map-kw sym-to-string ex-list) :to-equal
               (mapcar sym-to-string ex-list))))
-  (it "shouldn't touch anything that isn't a symbol"
-      (expect (circe-actions--deep-map sym-to-string
-                                       `(this 5 wont be stringified))
+  (it "shouldn't touch anything that isn't a :keyword"
+      (expect (circe-actions--deep-map-kw sym-to-string
+                                       `(:this 5 :wont :be :stringified
+                                               :or :this symbol))
               :to-equal
-              `("this" 5 "wont" "be" "stringified")))
+              `(":this" 5 ":wont" ":be" ":stringified"
+                ":or" ":this" symbol)))
   (it "should recurse into nested lists with ease"
-    (expect (circe-actions--deep-map sym-to-string
-                                     `(hmm how (would I put in apostrophes) in ((symbol)) names))
+    (expect (circe-actions--deep-map-kw sym-to-string
+                                        `(:hmm :how
+                                               (:would :I :put in :apostrophes)
+                                               :in ((:symbol)) :names))
             :to-equal
-            `("hmm" "how" ("would" "I" "put" "in" "apostrophes") "in" (("symbol")) "names")))
+            `(":hmm" ":how"
+              (":would" ":I" ":put" in ":apostrophes")
+              ":in" ((":symbol")) ":names")))
   ))
 
 (describe "with-circe-actions-closure"
@@ -312,28 +318,3 @@
 
     (expect (circe-actions--xor 5 nil) :not :to-be nil)
     (expect (circe-actions--xor nil 10) :not :to-be nil)))
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

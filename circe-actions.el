@@ -125,7 +125,7 @@ place it at event in the hash-table obtained from circe's irc handler table."
 
 (defun circe-actions-register (condition-p-function action-function event &optional persist)
   "Given a CONDITION-P-FUNCTION and ACTION-FUNCTION that takes args
-  consistent with the EVENT passed (as shown in the README.)
+  consistent with the EVENT passed (as shown in the README.):
 
 1) generate a procedure that executes ACTION-FUNCTION when CONDITION-P-FUNCTION
 2) place it and its associated event on circe-actions-handlers-alist
@@ -256,51 +256,61 @@ something is causing errors constantly"
   "Default prefix that transforms symbols in a sexp contained in a
   with-circe-actions-closure call. Either set this or set PREFIX during a call to with-circe-actions-closure")
 
-(defun circe-actions--deep-map (func tree)
-  "Trawl tree, applying func to each symbol. Function should handle symbols."
+(defun circe-actions--deep-map-kw (func tree)
+  "Trawl tree, applying func to each keyword. Keywords are symbols
+starting with ':'."
   (cond ((null tree) nil)
-        ((listp tree) (cons (circe-actions--deep-map func (car tree))
-                            (circe-actions--deep-map func (cdr tree))))
-        ((symbolp tree) (funcall func tree))
+        ((listp tree) (cons (circe-actions--deep-map-kw func (car tree))
+                            (circe-actions--deep-map-kw func (cdr tree))))
+        ((keywordp tree) (funcall func tree))
         ;; if it's none of these it's just a constant. No biggie.
         (t tree)))
 
-;; this is also hack-ish
-(defun circe-actions--transform-sym (symbol prefix)
+;; this is also hack-ish. In order to share state between the macro to
+;; generate the lambda we got to name easy-args _something_. Maybe
+;; namespace symbol as circe-actions--reserved
+(defun circe-actions--transform-kw (keyword prefix)
   "If (circe-actions--replace-prefixed-string SYMBOL prefix) returns non-nil, wrap the result with a plist-get call on the symbol easy-args. This symbol is populated in the closure. Otherwise just return the symbol."
-  (let ((result-str (circe-actions--replace-prefixed-string (symbol-name symbol)
+  (let ((result-str (circe-actions--replace-prefixed-string (symbol-name keyword)
                                                             prefix)))
     (if result-str
         `(plist-get easy-args ,(intern result-str))
-      symbol)))
+      keyword)))
 
 ;; TODO: make first argument a plist, allowing for :prefix and :event arguments
 ;; this is a convenient solution to the what if scenario where the event cannot be
 ;; accurately guessed from the argument list. The empty list accepts
 ;; all defaults.
-(defmacro with-circe-actions-closure (&rest body)
-  "If first arg is a string, use string as prefix to transform callbacks. Otherwise, use `circe-actions-default-prefix'. 
 
-  Given a sexp, traverse the sexp looking for symbols that match the given PREFIX"
-  (let* ((prefix
-          (let ((string-maybe (first body)))
-            (if (stringp string-maybe)
-                (progn
-                  (setq body (cdr body))
-                  string-maybe)
-              circe-actions-default-prefix)))
-         (transform-curry (lambda (symbol)
-                            (circe-actions--transform-sym symbol prefix))))
-         `(lambda (&rest args)
-            (let ((easy-args (circe-actions-plistify args)))
-              ,@(circe-actions--deep-map
-                 transform-curry
-                 body)
-              ))))
+;;   "If first arg is a string, use string as prefix to transform callbacks. Otherwise, use `circe-actions-default-prefix'. 
 
-  
+;;   Given a sexp, traverse the sexp looking for symbols that match the given PREFIX, replacing it with a form that pulls out the needed argument.
 
+;; An example:
+;; (with-circe-actions-closure
+;;   (string-prefix-p \"fsbot\" :fq-username))
 
+;; returns:
+;; (lambda (&rest args)
+;;   (let ((easy-args (circe-actions-plistify args)))
+;;     (string-prefix-p \"fsbot\" (plist-get easy-args :fq-username))))
+
+;; This is a function that is fit for registering on circe's handler table."
+
+(defmacro with-circe-actions-closure (args &rest body)
+  "with-circe-actions-closure is the bread _and_ butter of this package.
+  Given a"
+  (let* ((prefix (or (plist-get args :prefix)
+                     circe-actions-default-prefix))
+         (event (plist-get args :event-signature))
+         (transform-curry (lambda (keyword)
+                            (circe-actions--transform-kw keyword prefix))))
+    `(lambda (&rest circe-actions--args)
+       (let ((circe-actions--plistified-args
+              (circe-actions-plistify circe-actions--args event)))
+         ,@(circe-actions--deep-map-kw transform-curry body)))))
+
+         
 ;; -------------------- utility functions? Sure! --------------------
 
 (defun circe-actions-irc-message-contents (server-proc event fq-username channel contents)
