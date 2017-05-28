@@ -286,9 +286,9 @@ something is causing errors constantly"
                             (circe-actions--transform-sym symbol prefix))))
          `(lambda (&rest args)
             (let ((easy-args (circe-actions-plistify args)))
-              ,(circe-actions--deep-map
-                transform-curry
-                body)
+              ,@(circe-actions--deep-map
+                 transform-curry
+                 body)
               ))))
 
   
