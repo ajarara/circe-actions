@@ -263,7 +263,17 @@
       (expect (plist-get list-interleaved :yes) :to-equal "yes")
       (expect (plist-get list-interleaved :other) :to-equal "other"))))
 
-      
+(describe "circe-actions--replace-prefixed-symbol"
+  (it "should be identity on strings like :this"
+    (expect (circe-actions--replace-prefixed-string ":this" ":") :to-equal ":this")
+    (expect (circe-actions--replace-prefixed-string ":test" ":") :to-equal ":test"))
+  (it "should transform strings with :@strange prefixes given prefix"
+    (expect (circe-actions--replace-prefixed-string
+             ":@lemony" ":@") :to-equal ":lemony")
+    (expect (circe-actions--replace-prefixed-string
+             ":!snicket" ":!" :to-equal ":snicket"))))
+
+    
 (describe "circe-actions--xor"
   (it "should return false on two truthy values"
     (expect (circe-actions--xor t t) :to-be nil)
@@ -276,6 +286,7 @@
 
     (expect (circe-actions--xor 5 nil) :not :to-be nil)
     (expect (circe-actions--xor nil 10) :not :to-be nil)))
+
 
 
 

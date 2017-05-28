@@ -262,7 +262,7 @@ This makes it super convenient to use in a keybind without worrying about all so
    (lambda () (interactive)
      (circe-actions-register
       (with-circe-actions-closure
-       (= :payload "Hello!"))
+       (eq :payload "Hello!"))
       (with-circe-actions-closure
        (circe-command-MSG :target "Howdy!"))
        "irc.message"))))
@@ -279,12 +279,13 @@ This would expand to:
      (circe-actions-register
       (lambda (&rest args)
         (let ((easy-args (circe-actions-plistify args)))
-          (= (plist-get easy-args :payload) "Hello!")))
+          (eq (plist-get easy-args :payload) "Hello!")))
       (lambda (&rest args)
         (let ((easy-args (circe-actions-plistify args)))
           (circe-command-MSG (plist-get easy-args :target) "Howdy!")))
           "irc.message"))))
+(add-hook `circe-mode-hook `my-circe-greeting)
 ```
 
-A significant improvement. Barriers to implementing this are figuring out how to replace symbols like :symbol with the respective (plist-get easy-args :symbol) call. This isn't a trivial macro, and I'm not totally comfortable with writing them in the first place, but it would be a great finishing touch that would make this project something to be proud of.
+The first block is a significant improvement to the second (the way it is now). Barriers to implementing this are figuring out how to replace symbols like :symbol with the respective (plist-get easy-args :symbol) call. This isn't a trivial macro, and I'm not totally comfortable with writing them in the first place, but it would be a great finishing touch that would make this project something to be proud of.
 

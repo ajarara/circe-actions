@@ -3,7 +3,7 @@
 
 (package "circe-actions" "0.0.14" "Callback primitives for circe events")
 
-(depends-on "circe" "irc")
+(depends-on "circe" "irc" "subr")
 
 (development
   (depends-on "buttercup"))

@@ -47,7 +47,8 @@
 (defvar circe-actions-event-plists
   (let ((hash-table (make-hash-table :test 'equal)))
     (puthash "irc.message" circe-actions-default-event-signature hash-table)
-    ))
+    hash-table))
+    
 
 (defun circe-actions-generate-handler-function
     (condition-p-function action-function symbol event &optional persist)
@@ -236,7 +237,62 @@ something is causing errors constantly"
                        (circe-actions--interleave (cdr list-1)
                                                   (cdr list-2))))))))
 
-    
+(defvar circe-actions--symbol-regexp
+  "^%s\\(.+\\)"
+  "To be formatted with prefix. Captures whatever's beyond the prefix")
+
+;; this is a little hackish. 
+
+;; I would've split this up into a predicate and function were it not
+;; for the implicit state carried around here. Emacs is weird.
+(defun circe-actions--replace-prefixed-string (str prefix)
+  "If SYMBOL is prefixed by PREFIX, return a new string fit for use in a plist. "
+  (let ((reg (format circe-actions--symbol-regexp prefix)))
+    (when (string-match reg str)
+      (format ":%s" (match-string 1 str)))))
+
+(defvar circe-actions-default-prefix
+  ":"
+  "Default prefix that transforms symbols in a sexp contained in a
+  with-circe-actions-closure call. Either set this or set PREFIX during a call to with-circe-actions-closure")
+
+(defun circe-actions--deep-map (func tree)
+  "Trawl tree, applying func to each element. Function should handle symbols."
+  (cond ((null tree) nil)
+        ((listp tree) (cons (circe-actions--deep-map func (car tree))
+                            (circe-actions--deep-map func (cdr tree))))
+        ((symbolp tree) (funcall func tree))
+        ;; if it's none of these it's just a constant. No biggie.
+        (t tree)))
+
+;; this is also hack-ish
+(defun circe-actions--transform-sym (symbol prefix)
+  "If (circe-actions--replace-prefixed-string SYMBOL prefix) returns non-nil, wrap the result with a plist-get call on the symbol easy-args. This symbol is populated in the closure. Otherwise just return the symbol."
+  (let ((result-str (circe-actions--replace-prefixed-string (symbol-name symbol)
+                                                            prefix)))
+    (if result-str
+        `(plist-get easy-args ,(intern result-str))
+      symbol)))
+
+(defmacro with-circe-actions-closure (&rest body)
+  "If first arg is a string, use string as prefix to transform callbacks. Otherwise, use `circe-actions-default-prefix'. 
+
+  Given a sexp, traverse the sexp looking for symbols that match the given PREFIX"
+  (let* ((prefix
+          (if (stringp (first body))
+              (first body)
+            circe-actions-default-prefix))
+         (transform-curry (lambda (symbol)
+                            (circe-actions--transform-sym symbol prefix))))
+         `(lambda (&rest args)
+            (let ((easy-args (circe-actions-plistify args)))
+              ,(circe-actions--deep-map
+                transform-curry
+                body)
+              ))))
+
+  
+
 
 ;; -------------------- utility functions? Sure! --------------------
 
@@ -293,7 +349,6 @@ circe-actions-hippie-is-from-p"
   ;; there really isn't anything else to do besides killing the handlers
   ;; unload functions from function namespace?
   (circe-actions-panic))
-
 
 (provide 'circe-actions)
 ;;; circe-actions.el ends here
