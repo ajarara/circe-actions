@@ -257,7 +257,7 @@ something is causing errors constantly"
   with-circe-actions-closure call. Either set this or set PREFIX during a call to with-circe-actions-closure")
 
 (defun circe-actions--deep-map (func tree)
-  "Trawl tree, applying func to each element. Function should handle symbols."
+  "Trawl tree, applying func to each symbol. Function should handle symbols."
   (cond ((null tree) nil)
         ((listp tree) (cons (circe-actions--deep-map func (car tree))
                             (circe-actions--deep-map func (cdr tree))))
@@ -274,14 +274,21 @@ something is causing errors constantly"
         `(plist-get easy-args ,(intern result-str))
       symbol)))
 
+;; TODO: make first argument a plist, allowing for :prefix and :event arguments
+;; this is a convenient solution to the what if scenario where the event cannot be
+;; accurately guessed from the argument list. The empty list accepts
+;; all defaults.
 (defmacro with-circe-actions-closure (&rest body)
   "If first arg is a string, use string as prefix to transform callbacks. Otherwise, use `circe-actions-default-prefix'. 
 
   Given a sexp, traverse the sexp looking for symbols that match the given PREFIX"
   (let* ((prefix
-          (if (stringp (first body))
-              (first body)
-            circe-actions-default-prefix))
+          (let ((string-maybe (first body)))
+            (if (stringp string-maybe)
+                (progn
+                  (setq body (cdr body))
+                  string-maybe)
+              circe-actions-default-prefix)))
          (transform-curry (lambda (symbol)
                             (circe-actions--transform-sym symbol prefix))))
          `(lambda (&rest args)

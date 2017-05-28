@@ -263,7 +263,7 @@
       (expect (plist-get list-interleaved :yes) :to-equal "yes")
       (expect (plist-get list-interleaved :other) :to-equal "other"))))
 
-(describe "circe-actions--replace-prefixed-symbol"
+(describe "circe-actions--replace-prefixed-string"
   (it "should be identity on strings like :this"
     (expect (circe-actions--replace-prefixed-string ":this" ":") :to-equal ":this")
     (expect (circe-actions--replace-prefixed-string ":test" ":") :to-equal ":test"))
@@ -271,7 +271,33 @@
     (expect (circe-actions--replace-prefixed-string
              ":@lemony" ":@") :to-equal ":lemony")
     (expect (circe-actions--replace-prefixed-string
-             ":!snicket" ":!" :to-equal ":snicket"))))
+             ":!snicket" ":!") :to-equal ":snicket")))
+
+(describe "circe-actions--deep-map"
+  (let ((sym-to-string (lambda (x) (symbol-name x))))
+  (it "should behave like mapcar on flat lists of symbols"
+    (let ((ex-list `(this is a bunch of symbols)))
+      (expect (circe-actions--deep-map sym-to-string ex-list) :to-equal
+              (mapcar sym-to-string ex-list))))
+  (it "shouldn't touch anything that isn't a symbol"
+      (expect (circe-actions--deep-map sym-to-string
+                                       `(this 5 wont be stringified))
+              :to-equal
+              `("this" 5 "wont" "be" "stringified")))
+  (it "should recurse into nested lists with ease"
+    (expect (circe-actions--deep-map sym-to-string
+                                     `(hmm how (would I put in apostrophes) in ((symbol)) names))
+            :to-equal
+            `("hmm" "how" ("would" "I" "put" "in" "apostrophes") "in" (("symbol")) "names")))
+  ))
+
+(describe "with-circe-actions-closure"
+  (it "should have a stubbed test"
+    (expect t :to-be t)))
+
+(describe "circe-actions--transform-sym"
+  (it "should have a stubbed test"
+    (expect t :to-be t)))
 
     
 (describe "circe-actions--xor"
