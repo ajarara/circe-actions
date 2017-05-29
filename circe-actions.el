@@ -300,7 +300,7 @@ starting with ':'."
 ;; this is the real slim shady
 ;; but it needs circe-actions--normalize-args to be set up.
 (defmacro with-circe-actions-closure (&rest args)
-  (let* ((args (circe-actions--normalize-args))
+  (let* ((args (circe-actions--normalize-args args))
          (prefix (or (plist-get args :prefix)
                      circe-actions-default-prefix))
          (event (plist-get args :signature))
@@ -314,7 +314,32 @@ starting with ':'."
 
 ;; stubbed. tomorrow morning.
 (defun circe-actions--normalize-args (args)
-  nil)
+  (cond ((keywordp (car args))
+         (cond ((< (length args) 2)
+                (error "Keyword %s with no value!" (car args)))
+               ((keywordp (cadr args))
+                (error "Keyword %s followed by other keyword %s"
+                       (car args)
+                       (cadr args)))
+               ((or (equal (car args) :prefix)
+                    (equal (car args) :signature))
+                (if (stringp (cadr args))
+                    (cons (car args)
+                          (cons (cadr args)
+                                (circe-actions--normalize-args (cddr args))))
+                  (error "%s not followed by string!" (car args))))
+               ;; what's left is to test normalize args,
+               ;; also handle the body not being followed by a list
+               ;; then in the first cond handle just a list in (car args)
+               ;; that should be enough.
+               ;; figure out why buttercup is iffy with testing for errors
+               ))))
+                     
+                      
+                      
+                
+               
+           
 
 
          
