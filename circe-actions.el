@@ -297,18 +297,25 @@ starting with ':'."
 
 ;; This is a function that is fit for registering on circe's handler table."
 
-(defmacro with-circe-actions-closure (args &rest body)
-  "with-circe-actions-closure is the bread _and_ butter of this package.
-  Given a"
-  (let* ((prefix (or (plist-get args :prefix)
+;; this is the real slim shady
+;; but it needs circe-actions--normalize-args to be set up.
+(defmacro with-circe-actions-closure (&rest args)
+  (let* ((args (circe-actions--normalize-args))
+         (prefix (or (plist-get args :prefix)
                      circe-actions-default-prefix))
-         (event (plist-get args :event-signature))
+         (event (plist-get args :signature))
+         (expr (plist-get args :expr))
          (transform-curry (lambda (keyword)
                             (circe-actions--transform-kw keyword prefix))))
     `(lambda (&rest circe-actions--args)
        (let ((circe-actions--plistified-args
-              (circe-actions-plistify circe-actions--args event)))
-         ,@(circe-actions--deep-map-kw transform-curry body)))))
+              (circe-actions-plistify circe-actions--args ,event)))
+         ,@(circe-actions--deep-map-kw transform-curry expr)))))
+
+;; stubbed. tomorrow morning.
+(defun circe-actions--normalize-args (args)
+  nil)
+
 
          
 ;; -------------------- utility functions? Sure! --------------------

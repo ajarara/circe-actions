@@ -294,8 +294,7 @@
             :to-equal
             `(":hmm" ":how"
               (":would" ":I" ":put" in ":apostrophes")
-              ":in" ((":symbol")) ":names")))
-  ))
+              ":in" ((":symbol")) ":names")))))
 
 (describe "with-circe-actions-closure"
   (it "should have a stubbed test"
