@@ -313,14 +313,16 @@ starting with ':'."
          ,@(circe-actions--deep-map-kw transform-curry expr)))))
 
 ;; stubbed. tomorrow morning.
-(defun circe-actions--normalize-args (args)
-  (cond ((keywordp (car args))
+(defun circe-actions--normalize-args (&rest args)
+  (cond ((null (car args)) nil)
+        ((keywordp (car args))
          (cond ((< (length args) 2)
                 (error "Keyword %s with no value!" (car args)))
                ((keywordp (cadr args))
                 (error "Keyword %s followed by other keyword %s"
                        (car args)
                        (cadr args)))
+               ;; better way to check this?
                ((or (equal (car args) :prefix)
                     (equal (car args) :signature))
                 (if (stringp (cadr args))
@@ -328,20 +330,22 @@ starting with ':'."
                           (cons (cadr args)
                                 (circe-actions--normalize-args (cddr args))))
                   (error "%s not followed by string!" (car args))))
-               ;; what's left is to test normalize args,
-               ;; also handle the body not being followed by a list
-               ;; then in the first cond handle just a list in (car args)
-               ;; that should be enough.
-               ;; figure out why buttercup is iffy with testing for errors
-               ))))
-                     
-                      
-                      
+               ((equal (car args) :body)
+                (if (listp (cadr args))
+                    (cons (car args)
+                          (cons (cadr args)
+                                (circe-actions--normalize-args (cddr args))))
+                  (error "%s not followed by list!" (car args))))))
+        ;; this is the body, as it wasn't preceded by a keyword.
+        ((listp (car args))
+         (cons :body
+               (cons (car args)
+                     (circe-actions--normalize-args (cdr args)))))))
                 
+
                
-           
-
-
+               ;; what's left is to test normalize args,
+               ;; figure out why buttercup is iffy with testing for errors
          
 ;; -------------------- utility functions? Sure! --------------------
 
