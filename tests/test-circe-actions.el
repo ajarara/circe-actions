@@ -108,7 +108,7 @@
       
       
 (describe "circe-actions-generate-symbol"
-  (it "should test that internal symbol is preserved"
+  (it "preserves internal symbol"
     (let* ((some-sym (gensym "circe-actions-sym-"))
            (handler-func
             (circe-actions-generate-handler-function 'circe-actions-t

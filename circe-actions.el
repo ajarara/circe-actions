@@ -326,7 +326,7 @@ starting with ':'."
                          head
                          (cadr args)))
                  ((equal head :expr)
-                  ;; hm. issue here is :body can be followed by just :contents
+                  ;; hm. issue here is :expr can be followed by just :contents
                   ;; or even an atom! Not going to validate the contents.
                   (cons head
                         (cons (cadr args)
@@ -339,7 +339,8 @@ starting with ':'."
                                    (circe-actions--normalize-args (cddr args))))
                      (error "%s not followed by string!" head)))))
           ;; this is the body, as it wasn't preceded by a keyword.
-          ((or (listp head) (keywordp head))
+          ;; no need to validate. We've already checked if it's nil
+          (t
            (cons :expr
                  (cons head
                        (circe-actions--normalize-args (cdr args))))))))
