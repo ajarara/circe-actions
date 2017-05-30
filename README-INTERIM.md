@@ -13,12 +13,12 @@ Circe-actions is a convenient interface to building callback-style functions to 
 
 ## Table of contents
 
-- [Quick Usage](#quick-usage)
-- [Gotchas](#gotchas)
-- [Non-callback style registration](#non-callback-style-registration)
-- [Event signatures](#event-signatures)
-- [Circe-actions internals](#circe-actions-internals)
-- [Additional notes](#additional-notes)
+- [Quick Usage](#quick-usage)  # done
+- [Gotchas](#gotchas)  # done
+- [Non-callback style registration](#non-callback-style-registration)  # done
+- [Event signatures](#event-signatures)  # not done
+- [Circe-actions internals](#circe-actions-internals)  # not done
+- [Additional notes](#additional-notes)  # not done
 
 ## Quick usage
 
@@ -34,7 +34,7 @@ In all known cases, when an event occurs, elements in the "hook" are called sequ
 | target | The nick or channel the event is directed at | "#emacs", "fsbot" |
 | contents | Depends on the event. An `irc.message` event stores message, a CTCP ping stores round trip time | "Stormtrooper2: These aren't the droids we're looking for." |
 
-Having to write functions with this large parameter signature can be a pain. Circe-actions provides a facility to generate these functions while providing a convenient interface to access them.
+Having to write functions with this large parameter signature can be a pain. Circe-actions provides a facility to generate these functions while providing a convenient interface to access their arguments.
 
 ``` elisp
 (with-circe-actions-closure
@@ -54,9 +54,9 @@ Of course, the expression above doesn't do anything beyond generate a function. 
  
  Most use cases don't call for persistent event handling. Instead, circe-actions is geared towards one-shot callback workflows: register a callback, provoke a specific response, handle the response. For this, use `circe-actions-register`.
  
- Conceptually, we want three things here:
- ``` elisp
- (circe-actions-register
+Conceptually, we want three things here:
+``` elisp
+(circe-actions-register
    ;; an event type we want to listen in on
    "irc.message"
    ;; a condition we want satisfied by the event
@@ -66,6 +66,18 @@ Of course, the expression above doesn't do anything beyond generate a function. 
    (with-circe-actions-closure
      (message "%s sent: %s" :fq-username :contents)))
 ```
+
+To make the above persistent, simply set the persist flag:
+
+``` elisp
+(circe-actions-register
+  "irc.message"
+  (condition ...)
+  (action ...)
+  t)
+```
+
+This makes it so that everytime condition occurs, action executes for the rest of your emacs session.
 
 To clear all active event handlers, run `circe-actions-panic` or `circe-actions-disable` Both will remove everything. As of now there is no easy way to remove individual elements from the event table.
 
@@ -98,7 +110,55 @@ Instead, incorporate it within the closure like so:
     (message "%s sent: %s" user :contents)))))
 ```
 
+## Non-callback style registration
+As mentioned in [quick usage](#quick-usage), circe-actions was designed for callbacks. However it certainly is possible that we want to capture the nth event, or wait for a series of conditions to happen in order before doing something, or some other creative scenario. There are only two functions necessary to use here: circe-actions-activate-function, and circe-actions-deactivate-function.
 
- 
- 
- 
+Also mentioned in the quick usage section, activation of a function with respect to a specific event makes it get called _every time_ the event occurs. This means that we have to handle the deactivation step ourselves (unless we don't want to deactivate the function, of course).
+
+``` elisp
+;; we need closures to illustrate this example without descending into madness
+(setq lexical-binding t)
+(setq event "irc.message")
+
+(defun my-listen-5-times-then-quit-handler ()
+  (let ((func-sym (gensym "arbitrary-"))
+        (count 0))
+    (defalias func-sym
+      (with-circe-actions-closure
+         (message "%s" :payload)
+         (setq count (1+ count)) 
+         (when (>= count 4)
+           (circe-actions-deactivate-function
+            func-sym
+            event))))))
+
+(circe-actions-activate-function
+ (my-listen-5-times-then-quit-handler)  ; return a new independent closure
+ event)
+```
+
+Of course this could all be wrapped into a single command, fit for binding to a key:
+``` elisp
+(setq lexical-binding t)
+
+(defun message-five-times-then-quit ()
+  (interactive)
+  (let ((func-sym (gensym "arbitrary-"))
+        (count 0))
+    (defalias func-sym
+      (with-circe-actions-closure
+       (let ((func-sym func-sym))
+         (message "%s: %s" count :payload)
+         (setq count (1+ count)) 
+         (when (> count 4)
+           (circe-actions-deactivate-function
+            func-sym
+            event)))))))
+(add-to-hook 'circe-mode
+             (lambda () 
+               (local-set-key (kbd "C-c i") 
+                              `message-five-times-then-quit)))
+```
+
+
+
