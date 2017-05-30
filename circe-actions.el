@@ -123,7 +123,7 @@ place it at event in the hash-table obtained from circe's irc handler table."
 (defun circe-actions--gensym ()
   (gensym "circe-actions-gensym-"))
 
-(defun circe-actions-register (condition-p-function action-function event &optional persist)
+(defun circe-actions-register (event condition-p-function action-function &optional persist)
   "Given a CONDITION-P-FUNCTION and ACTION-FUNCTION that takes args
   consistent with the EVENT passed (as shown in the README.):
 

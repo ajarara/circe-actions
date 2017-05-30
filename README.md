@@ -1,5 +1,5 @@
 # circe-actions.el
-> IRC event handling with minimal hair loss.
+> Event driven callbacks for Circe (with minimal hair loss)
 
 [Circe][] is an IRC client for emacs sporting what most would call sane defaults. It has lots of features, not least of which is the ability to run arbitrary elisp code on many events.
 
@@ -13,12 +13,77 @@ Events can be messages, ctcp actions, nickserv ghosting, even [certain RPL codes
 
 ## Table of contents
 
+- [Quick Usage](#quick-usage)
 - [Walkthrough](#walkthrough)
 - [Utility functions](#utility-functions)
 - [Non-callback style registration](#non-callback-style-registration)
 - [Event signatures](#event-signatures)
 - [Internals of circe-actions](#internals-of-circe-actions)
 - [Additional notes](#additional-notes)
+
+
+## Quick usage
+
+Most every IRC event in Circe has an associated event "hook", a list of functions to be run on each event. These hooks are all located in an internal hash table accessed by `(circe-irc-handler-table)`. 
+
+When an event occurs, elements in the "hook" are called with this parameter signature:
+
+  * server-proc - The circe server process associated with the event.
+  * event - The string name of an event. 
+  
+      * Ex. "irc.message", "nickserv.identified", "irc.ctcp.VERSION", "366" (RPL_ENDOFNAMES), etc
+  * fq-username - The username initiating the event. fq stands for fully qualified, which includes account name and cloak.
+    * Ex. "tux!~igloo@ip:ad:dr::ess"
+  * target - The username or channel the event is directed at. If it's a username, it's just the nick.
+  * contents - This depends on the event. An `irc.message` event stores the message here. A CTCP ping stores round trip time.
+  
+Handling these arguments is easy using `with-circe-actions-closure`:
+
+``` elisp
+(with-circe-actions-closure
+  :contents)
+;; evaluates to:
+(lambda (&rest args) ...)  ; will return whatever is in the contents field when called
+```
+
+However Circe doesn't care what the return value of functions in the handler-table are, just that they run without error. `with-circe-actions-closure` can handle arbitrary s-expressions, so the user is welcome to use side effects to get out the results. A common use case is to message out replies:
+
+``` elisp
+(with-circe-actions-closure
+  (message :contents))
+```
+
+At expansion, `:contents` will be turned into an expression that gets the contents from the event.
+
+Of course, the expressions above don't do anything beyond generate functions. They must be registered with Circe so that it can call them back when the associated event occurs. Circe-actions provides an aptly named procedure to do exactly this.
+
+``` elisp
+(circe-actions-register
+  ;; during the event
+  "irc.message"
+  ;; Condition: if someone mentions puppies
+  (with-circe-actions-closure
+    (match-string "puppies" :contents))
+  ;; Action: let us know who's barking about them
+  (with-circe-actions-closure
+    (message "%s just mentioned puppies in %s!" :fq-username :target)))
+```
+
+Once the condition returns non-nil, the action is called with the same arguments. This happens only once. To get the latest on all the puppy gossip beyond just the next occurence, set the persist flag:
+
+``` elisp
+(circe-actions-register
+  "irc.message"
+  (with-circe-actions-closure
+    (match-string "puppies" :contents))
+  (with-circe-actions-closure
+    (message "%s just mentioned puppies in %s!" :fq-username :target))
+  ;; persist flag is below. the above is unchanged from the previous example.
+  t)
+```
+
+
+
 
 ## Walkthrough
 

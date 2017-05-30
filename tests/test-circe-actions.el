@@ -10,6 +10,10 @@
     (expect (circe-actions-t)
             :to-be t)))
 
+(describe "circe-actions-register"
+  (it "has a stubbed test"
+    (expect t :to-be t)))
+
 (describe "circe-actions-activate-function"
   :var (first-symbol second-symbol third-symbol)
   (before-all
@@ -267,7 +271,7 @@
   ;; even with a lexical scope.
     (xit "when evalled, pull out arguments from the plist named `circe-actions--plistified-args'"
       (expect (let ((circe-actions--plistified-args (list :foo "bar" :wibble "wobble")))
-                (eval (circe-actions--transform-kw :wibble ":") t)) :to-equal "wobble")))
+                (eval (circe-actions--transform-kw :wibble ":"))) :to-equal "wobble")))
 
 (describe "with-circe-actions-closure"
   (let ((handler-args (list "server-proc" "event" "fq-username" "target" "contents")))
@@ -278,7 +282,9 @@
                handler-args)
               :to-equal
               "fq-username"))
-    ))
+    (it "should recognize where the expr is in any given call"
+      
+      
         
     
 ;; -------------------- internal, unrelated functions      --------------------

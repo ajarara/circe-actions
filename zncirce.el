@@ -59,9 +59,10 @@ can also replace this sexp with: (lambda () \"$network\")
   (let ((server-name (funcall zncirce-server-name-func))
         (circe-callback-func
 	 (lambda ()
-	   (circe-actions-register 'zncirce-from-controlpanel-p
-				'circe-actions-irc-message-contents
-				"irc.message"))))
+	   (circe-actions-register "irc.message"
+                                   'zncirce-from-controlpanel-p
+                                   'circe-actions-irc-message-contents
+                                   ))))
     ;; why not call the callback function now if we're calling it
     ;; independently of arg? because setting it prompts for a
     ;; variable, which is interactive and thus could be exited out of,
@@ -95,9 +96,9 @@ can also replace this sexp with: (lambda () \"$network\")
 
 (defun zncirce-save-config ()
   (interactive)
-  (circe-actions-register 'zncirce-from-status-p
-			  'circe-actions-irc-message-contents
-			  "irc.message")
+  (circe-actions-register "irc.message"
+                          'zncirce-from-status-p
+			  'circe-actions-irc-message-contents)
   (circe-command-MSG "*status"
 		     "SaveConfig"))
 			  
