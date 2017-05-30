@@ -253,6 +253,34 @@
       (expect (circe-actions-is-active-p persistent-func event)))))
       
 
+(describe "circe-actions--transform-kw"
+  (it "should replace keywords with an sexp"
+    (let ((in :example)
+          (out `(plist-get circe-actions--plistified-args :example)))
+      (expect (circe-actions--transform-kw in ":") :to-equal out)))
+  (it "should call circe-actions--replace-prefixed-string passing keyword, prefix"
+    (spy-on 'circe-actions--replace-prefixed-string)
+    (circe-actions--transform-kw :@kwarg ":@")
+    (expect 'circe-actions--replace-prefixed-string :to-have-been-called-with ":@kwarg" ":@"))
+  
+  ;; Hmm.. the eval expr can't find circe-actions--plistified-args
+  ;; even with a lexical scope.
+    (xit "when evalled, pull out arguments from the plist named `circe-actions--plistified-args'"
+      (expect (let ((circe-actions--plistified-args (list :foo "bar" :wibble "wobble")))
+                (eval (circe-actions--transform-kw :wibble ":") t)) :to-equal "wobble")))
+
+(describe "with-circe-actions-closure"
+  (let ((handler-args (list "server-proc" "event" "fq-username" "target" "contents")))
+    (it "should provide an easy way to access context of circe events"
+      (expect (apply
+               (with-circe-actions-closure
+                :fq-username)
+               handler-args)
+              :to-equal
+              "fq-username"))
+    ))
+        
+    
 ;; -------------------- internal, unrelated functions      --------------------
 (describe "circe-actions--interleave"
   (it "should interleave two lists"
@@ -296,15 +324,6 @@
               (":would" ":I" ":put" in ":apostrophes")
               ":in" ((":symbol")) ":names")))))
 
-(describe "with-circe-actions-closure"
-  (it "should have a stubbed test"
-    (expect t :to-be t)))
-
-(describe "circe-actions--transform-sym"
-  (it "should have a stubbed test"
-    (expect t :to-be t)))
-
-    
 (describe "circe-actions--xor"
   (it "should return false on two truthy values"
     (expect (circe-actions--xor t t) :to-be nil)

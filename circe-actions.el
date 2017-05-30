@@ -242,7 +242,6 @@ something is causing errors constantly"
   "To be formatted with prefix. Captures whatever's beyond the prefix")
 
 ;; this is a little hackish. 
-
 ;; I would've split this up into a predicate and function were it not
 ;; for the implicit state carried around here. Emacs is weird.
 (defun circe-actions--replace-prefixed-string (str prefix)
@@ -274,7 +273,7 @@ starting with ':'."
   (let ((result-str (circe-actions--replace-prefixed-string (symbol-name keyword)
                                                             prefix)))
     (if result-str
-        `(plist-get easy-args ,(intern result-str))
+        `(plist-get circe-actions--plistified-args ,(intern result-str))
       keyword)))
 
 ;; TODO: make first argument a plist, allowing for :prefix and :event arguments
@@ -310,42 +309,40 @@ starting with ':'."
     `(lambda (&rest circe-actions--args)
        (let ((circe-actions--plistified-args
               (circe-actions-plistify circe-actions--args ,event)))
-         ,@(circe-actions--deep-map-kw transform-curry expr)))))
+         ,(circe-actions--deep-map-kw transform-curry expr)))))
 
-;; stubbed. tomorrow morning.
-(defun circe-actions--normalize-args (&rest args)
-  (cond ((null (car args)) nil)
-        ((keywordp (car args))
-         (cond ((< (length args) 2)
-                (error "Keyword %s with no value!" (car args)))
-               ((keywordp (cadr args))
-                (error "Keyword %s followed by other keyword %s"
-                       (car args)
-                       (cadr args)))
-               ;; better way to check this?
-               ((or (equal (car args) :prefix)
-                    (equal (car args) :signature))
-                (if (stringp (cadr args))
-                    (cons (car args)
-                          (cons (cadr args)
-                                (circe-actions--normalize-args (cddr args))))
-                  (error "%s not followed by string!" (car args))))
-               ((equal (car args) :body)
-                (if (listp (cadr args))
-                    (cons (car args)
-                          (cons (cadr args)
-                                (circe-actions--normalize-args (cddr args))))
-                  (error "%s not followed by list!" (car args))))))
-        ;; this is the body, as it wasn't preceded by a keyword.
-        ((listp (car args))
-         (cons :body
-               (cons (car args)
-                     (circe-actions--normalize-args (cdr args)))))))
-                
-
-               
-               ;; what's left is to test normalize args,
-               ;; figure out why buttercup is iffy with testing for errors
+(defun circe-actions--normalize-args (args)
+  (let ((head (car args)))
+    (cond ((null head) nil)
+          ;; if it's one of these reserved keywords
+          ((or (equal head :prefix)
+               (equal head :signature)
+               (equal head :expr))
+           ;; parse them specially
+           (cond ((< (length args) 2)
+                  (error "Keyword %s with no value!" head))
+                 ((keywordp (cadr args))
+                  (error "Keyword %s followed by other keyword %s"
+                         head
+                         (cadr args)))
+                 ((equal head :expr)
+                  ;; hm. issue here is :body can be followed by just :contents
+                  ;; or even an atom! Not going to validate the contents.
+                  (cons head
+                        (cons (cadr args)
+                              (circe-actions--normalize-args (cddr args)))))
+                  ;; all other options should be strings
+                  (t
+                   (if (stringp (cadr args))
+                       (cons head
+                             (cons (cadr args)
+                                   (circe-actions--normalize-args (cddr args))))
+                     (error "%s not followed by string!" head)))))
+          ;; this is the body, as it wasn't preceded by a keyword.
+          ((or (listp head) (keywordp head))
+           (cons :expr
+                 (cons head
+                       (circe-actions--normalize-args (cdr args))))))))
          
 ;; -------------------- utility functions? Sure! --------------------
 
