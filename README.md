@@ -82,6 +82,21 @@ Once the condition returns non-nil, the action is called with the same arguments
   t)
 ```
 
+## Issues using with-circe-actions-closure
+
+Certain expressions you know and love in emacs won't work (at least for now), by virtue of the callback nature of this module.
+
+``` elisp
+(let ((watch-str "puppies"))
+  (circe-actions-register
+    "irc.message"
+    (with-circe-actions-closure
+      (match-string watch-str :contents))
+    (with-circe-actions-closure
+      (message "%s just mentioned %s in %s" :fq-username watch-str :target))))
+```
+
+Evaluated in a dynamic scoping environment, the 
 
 
 

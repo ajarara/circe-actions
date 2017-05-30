@@ -39,7 +39,7 @@
 ;; is also included). Later on it may be necessary to change this.
 
 (defconst circe-actions-default-event-signature
-  (list :server-proc :event :fq-username :target :payload)
+  (list :server-proc :event :fq-username :target :contents)
   "Default list of symbols obtained if there is no match in circe-actions-event-plists for the event.")
 
 ;; should be set to nil and populated on circe-actions-enable?
@@ -276,11 +276,6 @@ starting with ':'."
         `(plist-get circe-actions--plistified-args ,(intern result-str))
       keyword)))
 
-;; TODO: make first argument a plist, allowing for :prefix and :event arguments
-;; this is a convenient solution to the what if scenario where the event cannot be
-;; accurately guessed from the argument list. The empty list accepts
-;; all defaults.
-
 ;;   "If first arg is a string, use string as prefix to transform callbacks. Otherwise, use `circe-actions-default-prefix'. 
 
 ;;   Given a sexp, traverse the sexp looking for symbols that match the given PREFIX, replacing it with a form that pulls out the needed argument.
@@ -311,10 +306,12 @@ starting with ':'."
               (circe-actions-plistify circe-actions--args ,event)))
          ,(circe-actions--deep-map-kw transform-curry expr)))))
 
+  
+
 (defun circe-actions--normalize-args (args)
   (let ((head (car args)))
     (cond ((null head) nil)
-          ;; if it's one of these reserved keywords
+          ;; check for reserved keywords
           ((or (equal head :prefix)
                (equal head :signature)
                (equal head :expr))
