@@ -4,7 +4,7 @@
 
 
 ;; Author: alphor
-;; Version: 0.0.2
+;; Version: 0.0.4
 ;; Keywords: circe callback handler
 
 ;; Utility functions for interfacing with circe-irc-handler-table

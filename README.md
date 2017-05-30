@@ -307,52 +307,6 @@ The persistence case is exactly the same, except it is never deactivated. It mus
 
 
 # Additional notes
-Usage of circe-actions-plistify isn't the best interface. Ideally I'd like calls to register handler functions like this:
+Now that we have a nice interface to creating predicate and action functions, we should rewrite all of the utilities, and farm them out to circe-actions-utils.el
 
-``` elisp
-(circe-actions-register
- (with-circe-actions-closure
-  (= :payload "Hello!"))
- (with-circe-actions-closure
-  (circe-command-MSG :user "Howdy!")))
-```
-Circe-actions-plistify is already agnostic to events, and it seems most events use the same call signature anyway, so it would make for a great utility to translate the above block into actual calls. 
-
-This makes it super convenient to use in a keybind without worrying about all sorts of details:
-
-``` elisp
-(defun my-circe-greeting-bind ()
-  (local-set-key
-   (kbd "C-c q")
-   (lambda () (interactive)
-     (circe-actions-register
-      (with-circe-actions-closure
-       (eq :payload "Hello!"))
-      (with-circe-actions-closure
-       (circe-command-MSG :target "Howdy!"))
-       "irc.message"))))
-(add-hook `circe-mode-hook `my-circe-greeting)
-```
-
-This would expand to:
-``` elisp
-(defun my-circe-greeting ()
-  (local-set-key
-   (kbd "C-c q")
-   (lambda ()
-     (interactive)
-     (circe-actions-register
-      (lambda (&rest args)
-        (let ((easy-args (circe-actions-plistify args)))
-          (eq (plist-get easy-args :payload) "Hello!")))
-      (lambda (&rest args)
-        (let ((easy-args (circe-actions-plistify args)))
-          (circe-command-MSG (plist-get easy-args :target) "Howdy!")))
-          "irc.message"))))
-(add-hook `circe-mode-hook `my-circe-greeting)
-```
-
-The first block is a significant improvement to the second (the way it is now). Barriers to implementing this are figuring out how to replace symbols like :symbol with the respective (plist-get easy-args :symbol) call. This isn't a trivial macro, and I'm not totally comfortable with writing them in the first place, but it would be a great finishing touch that would make this project something to be proud of.
-
-
-After implementing the above, an additional nicety would be to emulate iptables chains. This cuts down on the problem of 'how to interactively remove errant rules'
+A nicety would be to emulate iptables chains. This cuts down on the problem of 'how to interactively remove errant rules' without removing everything.
