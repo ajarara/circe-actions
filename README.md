@@ -1,292 +1,209 @@
 # circe-actions.el
-> Event driven callbacks for Circe (with minimal hair loss)
 
 [Circe][] is an IRC client for emacs sporting what most would call sane defaults. It has lots of features, not least of which is the ability to run arbitrary elisp code on many events.
 
+
 [circe]: https://github.com/jorgenschaefer/circe
 
-Circe-actions is a convenient interface to building callback-style functions to handle the events emitted by circe, based entirely on circe-irc-handler-table.
-
-Events can be messages, ctcp actions, nickserv ghosting, even [certain RPL codes][] like RPL_WELCOME and RPL_TOPIC.
+Circe-actions is a convenient interface to building callback-style functions to handle the events emitted by circe. Events can be messages, ctcp actions, nickserv ghosting, even [certain RPL codes][] like RPL_WELCOME and RPL_TOPIC
+.
 
 [certain RPL codes]: https://tools.ietf.org/html/rfc2812#section-5
 
 ## Table of contents
 
 - [Quick Usage](#quick-usage)
-- [Walkthrough](#walkthrough)
-- [Utility functions](#utility-functions)
+- [Modifying closure behavior](#modifying-closure-behavior)
+- [Gotchas](#gotchas)
 - [Non-callback style registration](#non-callback-style-registration)
 - [Event signatures](#event-signatures)
-- [Internals of circe-actions](#internals-of-circe-actions)
+- [Circe-actions internals](#circe-actions-internals)
 - [Additional notes](#additional-notes)
-
 
 ## Quick usage
 
 Most every IRC event in Circe has an associated event "hook", a list of functions to be run on each event. These hooks are all located in an internal hash table accessed by `(circe-irc-handler-table)`. 
 
-When an event occurs, elements in the "hook" are called with this parameter signature:
+In all known cases, when an event occurs, elements in the "hook" are called sequentially with this parameter signature:
 
-  * server-proc - The circe server process associated with the event.
-  * event - The string name of an event. 
-  
-      * Ex. "irc.message", "nickserv.identified", "irc.ctcp.VERSION", "366" (RPL_ENDOFNAMES), etc
-  * fq-username - The username initiating the event. fq stands for fully qualified, which includes account name and cloak.
-    * Ex. "tux!~igloo@ip:ad:dr::ess"
-  * target - The username or channel the event is directed at. If it's a username, it's just the nick.
-  * contents - This depends on the event. An `irc.message` event stores the message here. A CTCP ping stores round trip time.
-  
-Handling these arguments is easy using `with-circe-actions-closure`:
+| Parameter name | Description | Example |
+| -------------- | ----------- | -------:|
+| server-proc | The circe server processes associated with the event | bouncer.jarmac.org |
+| event | The string name of an event | "nickserv.identified", "irc.message", "366" |
+| fq-username | The fully qualified username initiating the event  | "tux!~igloo@ip:ad:dr::ess" |
+| target | The nick or channel the event is directed at | "#emacs", "fsbot" |
+| contents | Depends on the event. An `irc.message` event stores message, `irc.ctcp.ping` stores round trip time | "Stormtrooper2: These aren't the droids we're looking for." |
 
-``` elisp
-(with-circe-actions-closure
-  :contents)
-;; evaluates to:
-(lambda (&rest args) ...)  ; will return whatever is in the contents field when called
-```
+This is defined in `circe-actions-default-event-signature`, and of course can be changed.
 
-However Circe doesn't care what the return value of functions in the handler-table are, just that they run without error. `with-circe-actions-closure` can handle arbitrary s-expressions, so the user is welcome to use side effects to get out the results. A common use case is to message out replies:
+Having to write functions with this large parameter signature can be a pain. Circe-actions provides a facility to generate these functions while providing a convenient interface to access their arguments.
 
 ``` elisp
 (with-circe-actions-closure
-  (message :contents))
+  (message "%s said %s to %s!" :fq-username :contents :target))
 ```
 
-At expansion, `:contents` will be turned into an expression that gets the contents from the event.
+Of course, the expression above doesn't do anything beyond generate a function. In order to have Circe run it, we must register it like so:
 
-Of course, the expressions above don't do anything beyond generate functions. They must be registered with Circe so that it can call them back when the associated event occurs. Circe-actions provides an aptly named procedure to do exactly this.
+``` elisp
+(circe-actions-activate-function
+  (with-circe-actions-closure
+    (message "%s said %s to %s!" :fq-username :contents :target))
+  "irc.message")
+ ```
+ 
+ `circe-actions-activate-function` is a primitive of circe-actions. It takes a function and an event, and registers it so that it is called by Circe when the event occurs. Once activated in this way, Circe will call the function each time the event occurs.
+ 
+ Most use cases don't call for persistent event handling. Instead, circe-actions is geared towards one-shot callback workflows: register a callback, provoke a specific response, handle the response. For this, use `circe-actions-register`.
+ 
+Conceptually, we want three things here:
+``` elisp
+(circe-actions-register
+   ;; an event type we want to listen in on
+   "irc.message"
+   ;; a condition we want satisfied by the event
+   (with-circe-actions-closure
+     (string-prefix-p "fsbot" :fq-username))
+   ;; an action we want done within the context of the event
+   (with-circe-actions-closure
+     (message "%s sent: %s" :fq-username :contents)))
+```
+
+To make the above persistent, simply set the persist flag:
 
 ``` elisp
 (circe-actions-register
-  ;; during the event
   "irc.message"
-  ;; Condition: if someone mentions puppies
-  (with-circe-actions-closure
-    (match-string "puppies" :contents))
-  ;; Action: let us know who's barking about them
-  (with-circe-actions-closure
-    (message "%s just mentioned puppies in %s!" :fq-username :target)))
-```
-
-Once the condition returns non-nil, the action is called with the same arguments. This happens only once. To get the latest on all the puppy gossip beyond just the next occurence, set the persist flag:
-
-``` elisp
-(circe-actions-register
-  "irc.message"
-  (with-circe-actions-closure
-    (match-string "puppies" :contents))
-  (with-circe-actions-closure
-    (message "%s just mentioned puppies in %s!" :fq-username :target))
-  ;; persist flag is below. the above is unchanged from the previous example.
+  (condition ...)
+  (action ...)
   t)
 ```
 
-## Issues using with-circe-actions-closure
+This makes it so that everytime condition occurs, action executes for the rest of your emacs session.
 
-Certain expressions you know and love in emacs won't work (at least for now), by virtue of the callback nature of this module.
+To clear all active event handlers, run `circe-actions-panic` or `circe-actions-disable`. Both will remove everything. As of now there is no easy way to remove individual elements from the event table.
+
+
+## Modifying closure behavior
+### :prefix
+Under the hood, `with-circe-actions-closure` generates a lambda expression that replaces all keywords (that is, symbols that look like `:this`) with an expression that pulls them out of a plist made available at execution. Namely, _all_ keywords get modified in this way. By default.
+
+To preserve symbols, with-circe-actions-closure itself provides a keyword argument that determines what symbols to transform.
+
+Usage:
+``` elisp
+(with-circe-actions-closure
+ :prefix ":!"
+ :expr (list :these :wont :be :transformed :but :!these :!will))
+;; yields
+(lambda (&rest args)
+  (let ((easy-args (circe-actions-plistify args)))
+   (list :these :wont :be :transformed :but
+     (plist-get easy-args :these)
+     (plist-get easy-args :will))))
+```
+### :signature
+Circe-actions can automatically figure out what event is being handled from the context of the execution environment. Sounds impressive, but unfortunately there's no wizardry here, Circe passes the event as the 2nd argument.
+
+In case this 'heuristic' fails, provide :signature to the call of `with-circe-actions-closure`, like so:
 
 ``` elisp
-(let ((watch-str "puppies"))
-  (circe-actions-register
-    "irc.message"
-    (with-circe-actions-closure
-      (match-string watch-str :contents))
-    (with-circe-actions-closure
-      (message "%s just mentioned %s in %s" :fq-username watch-str :target))))
+(with-circe-actions-closure
+ :signature "irc.ctcp.PING"
+ :expr (when (> (string-to-number :contents) 200)
+         (message "Too slow!")))
 ```
 
-Evaluated in a dynamic scoping environment, the 
+## Gotchas
+
+The below will not work if not evaluated with lexical scoping (emacs' default is dynamic)
+ 
+ ``` elisp
+(let ((user "fsbot"))
+ (circe-actions-register
+  "irc.message"
+  (with-circe-actions-closure
+   (string-prefix-p user :fq-username))
+  (with-circe-actions-closure
+   (message "%s sent: %s" user :contents))))
+```
+The reason this doesn't work is that once the callback is actually evaluated, `user` is no longer within scope.
+
+Instead, incorporate it within the closure like so:
+
+ ``` elisp
+(let ((user "fsbot"))
+ (circe-actions-register
+  "irc.message"
+  (with-circe-actions-closure
+   (let ((user user))
+    (string-prefix-p user :fq-username)))
+  (with-circe-actions-closure
+   (let ((user user))
+    (message "%s sent: %s" user :contents)))))
+```
 
 
+## Non-callback style registration
+As mentioned in [quick usage](#quick-usage), circe-actions is designed for callbacks. However it certainly is possible that we want to capture the nth event, or wait for a series of conditions to happen in order before doing something, or some other creative scenario. There are only two functions necessary to use here: circe-actions-activate-function, and circe-actions-deactivate-function.
 
-## Walkthrough
-
-Circe has a hash table accessed by ```circe-irc-handler-table``` that has events as keys and functions as values.
-
-Being an IRC client, Circe is naturally responsible for handling all sorts of IRC events. When it handles an event, it also runs everything in circe-irc-handler-table associated with the type of the event, and passes them arguments. Circe doesn't care about the return values of the statements, all it does is hope that they run without error (because then Circe can't finish processing the event.)
-
-Let's say we want to be notified in the minibuffer when the next activity in a specific channel is. Ignore the fact that tracking.el (distributed with Circe) does this better.
-
-We want to check for the next "irc.message" event in channel "#foo". Conceptually, we have three things here: 
- - a condition we want satisfied
- - an action we want done on that condition being satisfied
- - the event we're concerning ourselves with.
-
-### Condition function
-Most of the work, strangely enough, is in remembering the function signature (the list of arguments a function takes) for the event.
+Also mentioned in the quick usage section, activation of a function with respect to a specific event makes it get called _every time_ the event occurs. This means that we have to handle the deactivation step ourselves (unless we don't want to deactivate the function, of course).
 
 ``` elisp
-(defun activity-in-foo-long (server-proc event fq-username target payload)
-   (equal target "#foo"))
+;; we need closures to illustrate this example without descending into madness
+(setq lexical-binding t)
+(setq event "irc.message")
+
+(defun my-listen-5-times-then-quit-handler ()
+  (let ((func-sym (gensym "arbitrary-"))
+        (count 0))
+    (defalias func-sym
+      (with-circe-actions-closure
+         (message "%s" :payload)
+         (setq count (1+ count)) 
+         (when (>= count 4)
+           (circe-actions-deactivate-function
+            func-sym
+            event))))))
+
+(circe-actions-activate-function
+ (my-listen-5-times-then-quit-handler)  ; return a new independent closure
+ event)
 ```
 
-The byte compiler whines when a function names arguments and doesn't use them, so we could put underscores in the ones we don't use, but already we should be alarmed, this probably isn't the best way to do things. Instead, we can do it like this:
-
-
+Of course this could all be wrapped into a single command, fit for binding to a key:
 ``` elisp
-(defun activity-in-foo (&rest args)
-    (let ((easy-args (circe-actions-plistify args "irc.message")))
-	  (equal (plist-get :target easy-args)
-	         "#foo")))
+(setq lexical-binding t)
+(setq event "irc.message")  ; this can be pushed into the definition as well
+
+(defun message-five-times-then-quit ()
+  (interactive)
+  (let ((func-sym (gensym "arbitrary-"))
+        (count 0))
+    (defalias func-sym
+      (with-circe-actions-closure
+       (let ((func-sym func-sym))
+         (message "%s" count :payload)
+         (setq count (1+ count)) 
+         (when (> count 4)
+           (circe-actions-deactivate-function
+            func-sym
+            event)))))))
+
+
+(add-to-hook 'circe-mode
+             (lambda () 
+               (local-set-key (kbd "C-c i") 
+                              `message-five-times-then-quit)))
 ```
 
-Let's tackle some questions you might have. What's circe-actions-plistify?
-
-Circe-actions-plistify makes it easy to get what you want from the arguments passed to the function. There are 5 passed to the function, and it's arduous to remember the order every time. So instead we access them by what we want using plist-get. Yes, it's an O(N) operation but do you want processor cycles or sanity? (If you're staunch about using the first example, check [event signatures](#Event-signatures) for what you want)
-
-Another question: Why is the property called :target, and not :channel?
-
-"irc.message" is also fired when a private message is sent. The :target in this case would be whoever the private message was sent to (so in all real world cases, your nick). So it's trivial to change the above to return true when you get a private message, just change "#foo" to "$nick". (There are less awkward ways to do this, remember, we're just learning here!)
-
-Now that we have the condition function out of the way... 
-
-### Action function
-We'd like to alert ourselves in the minibuffer of what was said:
-
-``` elisp
-(defun spit-out-payload (&rest args)
-  (let ((easy-args (circe-actions-plistify args "irc.message")))
-    (message "Activity in #foo: %s" (plist-get :payload easy-args))))
-```
-
-Easy enough, we just get the payload (think contents of a message) from easy-args and message it.
-
-Here's the equivalent without using plistify:
-
-``` elisp
-(defun spit-out-payload (_server-proc _event _fq-username _target payload)
-  (message "Activity in #foo: %s" payload))
-```
-
-### Registration
-Following along so far? Here's the hard part:
-
-``` elisp
-(circe-actions-register 'activity-in-foo 'spit-out-payload)
-```
-
-That's it. The next time you recieve a message satisfying activity-in-foo, spit-out-payload is run with the same arguments.
-
-This only occurs once. If you want it to persist, set the persist flag:
-
-``` elisp
-(circe-actions-register 'activity-in-foo 'spit-out-payload t)
-```
-Notice the "t".
-
-Now _everytime_ someone says something in #foo, the minibuffer'll know about it. To disable all persistent handlers, M-x circe-actions-panic, or M-x circe-actions-disable gets rid of them. (As of now, there is no way to disable specific ones, as there isn't an easy way I can think of to present them to the user)
-
-Finally, there is no need to assign names to these one off functions, instead we can put them in lambdas:
-``` elisp
-(circe-actions-register (lambda (&rest args)
-                          (let ((easy-args (circe-actions-plistify args "irc.message")))
-                            (equal (plist-get :target easy-args)
-                                   "#foo")))
-                        (lambda (&rest args)
-                          (let ((easy-args (circe-actions-plistify args "irc.message")))
-                            (message "Activity in #foo: %s" (plist-get :payload easy-args))))
-                        t)
-```
-
-Of course, there is another way to handle other non-callback use cases, see [non-callback-style registration](#non-callback-style-registration)
-
-## circe-actions-panic
-In the case that something is tripping the debugger 3 times a second, you'll probably want to call this. It iterates through the alist holding all the registered functions and removes them from the handler table (and the alist). This function is also called when you call M-x disable-circe-actions.
-
-# Utility functions
-Circe-actions takes the liberty of defining loads of helpful closures, to help you save every follicle in these trying times.
-
-__Note:__ These _return_ functions to be used as predicates, they are not predicates themselves. The whole point is so that you don't have to set up lexical binding in your init file to make these closures without resorting to dynamically scoped alists if you don't want to.
-
-## circe-actions-t
-In case you want to capture the next event unconditionally, you may be tempted to use t as a condition function. This won't work. Instead, you must wrap t in a lambda that takes in the correct number of arguments. circe-actions-t is exactly this. In this case, there is no closure. All of the following are closures.
-
-
-## circe-actions-is-from-p
-Usage: (circe-actions-from-p "alphor!~floor13@2604:180:2::10")
-
-Returns a closure that when evaluated with the right arguments, returns true when the event was caused by "alphor!~floor13@2604:180:2::10".
-
-Wait does this mean that you can only reliably target cloaks? Yes. This is more useful for ZNC, when you want to make absolutely sure you got the message from the right entity. But don't worry, my child:
-
-## circe-actions-hippie-is-from-p
-Usage: (circe-actions-hippie-is-from-p "alphor!~")
-
-Returns a closure that when evaluated with the right arguments, returns true when the event caused by the sender starts with "alphor!~"
-
-## circe-actions-sent-to-p
-Usage: (circe-actions-sent-to-p "alphor!~floor13@2604:140:76::5")
-
-Returns a closure that when evaluated with the right arguments, returns true when the event is targeted at "alphor!~floor13@2604:140:76::5"
-
-## circe-actions-hippie-sent-to-p
-Usage: (circe-actions-hippie-sent-to-p "alph")
-
-Returns a closure that when evaluated with the right arguments, returns true when the event is targeted at any nick that starts with "alph", including "alphor", "alph", but not "ALF" the [friendly extraterrestrial][]. He doesn't use IRC these days anyway.
-
-[friendly extraterrestrial]: https://en.wikipedia.org/wiki/ALF_(TV_series)
-
-# Non-callback style registration
-
-Circe-actions is geared towards usage of callbacks. Register a function, do something that provokes a response, execute the function with the context of the response. However, it is definitely possible that we want to capture the nth event, or wait for a series of conditions to happen in order before doing something, or some other creative scenario. There are only two functions necessary to use here: circe-actions-activate, and circe-actions-deactivate.
-
-
-Activation of a function w.r.t a specific event makes it get called _every time_ the event occurs, with the same argument signature.
-
-The only thing we have to keep in mind is that we have to handle the deactivation step within the function (unless we don't want to deactivate the function, of course).
-``` elisp
-  ;; we need closures to illustrate this example without descending into madness
-  (setq lexical-binding t)
-  (setq function-symbol (gensym "arbitrary-"))
-  (setq circe-event "irc.message") 
-
-  (defun message-five-times-then-quit ()
-    "Generate and return a function that messages the next 5 messages
-    passed to it, deactivating itself at the 5th (or greater) one."
-    (defalias function-symbol ; function-symbol is evaluated to get the symbol generated above
-      (let ((count 0)) ; we increment this each time the lambda is called.
-        (lambda (&rest arglist)
-          (let ((contents-of-message (nth 4 arglist)))
-            (message "%s" contents-of-message) ; see message warning in README
-            (setq count (1+ count))
-            (when (>= count 4) 
-              (circe-actions-deactivate-function function-symbol)))))))
-                      
-
-  ;; at this point, the only thing needed is to activate it.
-  (circe-actions-activate-function (message-five-times-then-quit) ; return a new independent closure
-                                   "irc.message")
-```
-
-Of course if you want to bind all this to a key you could wrap all of it in an interactive function, like so:
-
-``` elisp
-  (setq lexical-binding t)
-
-  (defun message-five-times-then-quit ()
-    (interactive)
-    (let ((function-symbol (gensym "arbitrary-"))
-          (event "irc.message")) 
-      (defalias function-symbol
-        (let ((count 0))
-          (lambda (&rest arglist)
-            (let ((contents-of-message (nth 4 arglist)))
-              (message "%s" contents-of-message)
-              (setq count (1+ count))
-              (when (>= count 4)
-                (circe-actions-deactivate-function function-symbol))))))
-      
-      (circe-actions-activate-function function-symbol event)))
-
-```
 
 # Event signatures
-Parameters are passed in the order described. If an event is not in this table, assume it follows the same signature as irc.message.
+Parameters for an event are passed in the order listed. Prepend a ":" to get its respective event value. If an event is not in this table, assume it follows the same signature as irc.message.
 
 | Event name  | Description | Parameters |
 | ----------- | ------------- | ------------:|
-| irc.message | Fired on every message or query | server-proc, event, fq-username, channel, contents |
+| irc.message | Fired on every message or query | server-proc, event, fq-username, target, contents |
 
 If there is a different signature, please open an issue or a PR, both are welcome!
 
@@ -294,13 +211,13 @@ If there is a different signature, please open an issue or a PR, both are welcom
 # Internals of circe-actions
 This part is long, and completely unnecessary to read if you're just using circe-actions to build your own extensions.
 
-As discussed in the walkthrough, Circe has an event handler table that holds all the events as keys and (possibly empty) lists as values. Circe-actions defines a primitive called ```circe-actions-activate-function``` which takes a function and a key of the handler table, and adds the function to right place in the event handler table. It keeps track of what functions were added in an association list, circe-actions-handlers-alist. When an action is deactivated, it is first looked for in the alist, and based on what key is stored there, it is deactivated in the key of the event handler table.
+As discussed in the quick usage, Circe has an event handler table that holds all the events as keys and (possibly empty) lists as values. Circe-actions defines a primitive called `circe-actions-activate-function` which takes a function and a key of the handler table, and adds the function to the right place in the event handler table. It keeps track of what functions were added in an association list, circe-actions-handlers-alist. When an action is deactivated, it is first looked for in the alist, and based on what key is stored there, it is deactivated in the key of the event handler table.
 
 Thus, it is possible to have the same exact function registered to different events.
 
 Speaking of registration, what goes on in circe-actions-register?
 
-Well, not that much. Circe-actions-register takes the symbols passed to it, and generates a handler function, through the use of the aptly named ```circe-actions-generate-handler-function```, reproduced here:
+Well, not that much. Circe-actions-register takes the symbols passed to it, and generates a handler function, through the use of the aptly named `circe-actions-generate-handler-function`, reproduced here:
 
 ``` elisp
 (defun circe-actions-generate-handler-function
@@ -320,8 +237,7 @@ The handler generator function takes in the condition function, action function,
 
 The persistence case is exactly the same, except it is never deactivated. It must either be deactivated in the action function (preferably at the beginning to avoid the situation above), or not activated at all. An example is shown in [Non-callback-style registration](#Non-callback-style-registration).
 
-
 # Additional notes
-Now that we have a nice interface to creating predicate and action functions, we should rewrite all of the utilities, and farm them out to circe-actions-utils.el
+Now that we have a nice interface to creating predicate and action functions, we should rewrite all of the utilities, and farm them out to circe-actions-utils.el, so that they can be loaded in as needed.
 
 A nicety would be to emulate iptables chains. This cuts down on the problem of 'how to interactively remove errant rules' without removing everything.

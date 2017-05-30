@@ -6,9 +6,7 @@ example usage:
 (circe-actions-get 'message "irc.message" arg-list)
 
 implemented instead with circe-actions-plistify
-** TODO illustrate with doctor-callbacks
-M-x doctor is weird. would be a humorous example, but the way it's designed is strange as all hell.
-** TODO Tests!
+** DONE Tests!
 Should be implemented with Buttercup, I think. Testing interactively with ERT is a pain, I've already had to build my own mock functions (that don't accurately reflect the actual environment). I'd much rather have the ability to call the real functions in a mock environment. ERT has no easy facility to do this.
 
 Further, it would probably be a good idea to move some of the ert tests in circe-actions to buttercup as well. 
