@@ -270,8 +270,8 @@
   ;; Hmm.. the eval expr can't find circe-actions--plistified-args
   ;; even with a lexical scope.
     (xit "when evalled, pull out arguments from the plist named `circe-actions--plistified-args'"
-      (expect (let ((circe-actions--plistified-args (list :foo "bar" :wibble "wobble")))
-                (eval (circe-actions--transform-kw :wibble ":"))) :to-equal "wobble")))
+      (let ((circe-actions--plistified-args (list :foo "bar" :wibble "wobble")))
+        (expect (funcall (lambda () (circe-actions--transform-kw :wibble ":"))) :to-equal "wobble"))))
 
 (describe "with-circe-actions-closure"
   (let ((handler-args (list "server-proc" "event" "fq-username" "target" "contents")))

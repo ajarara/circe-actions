@@ -70,7 +70,11 @@ is through an interactive circe-actions-deactivate-function call, or
 by calling circe-actions-panic, which deactivates all handlers
 indiscriminately.
 
-CONDITION-P-FUNCTION and ACTION-FUNCTION must be procedures that have the same event signature as the event it handles, as described in circe-actions-event-plists. In the case of \"irc.message\", it should either take in a list of arguments (to be processed by `circe-actions-plistify')
+CONDITION-P-FUNCTION and ACTION-FUNCTION must be procedures that have
+the same event signature as the event it handles, as described in
+circe-actions-event-plists. In the case of \"irc.message\", it should
+take in a list of arguments (to be optionally processed by
+`circe-actions-plistify')
 
 server-proc - usually the result of (circe-server-process)
 event - the event, ie irc.message or a ctcp ping
@@ -131,7 +135,10 @@ place it at event in the hash-table obtained from circe's irc handler table."
 2) place it and its associated event on circe-actions-handlers-alist
 3) place it on the bucket corresponding to event in (circe-irc-handler-table)
 
-If persist is set, the procedure does not remove itself after being called once. This is potentially very dangerous if your condition function is computationally expensive (or, y'know, monetarily expensive). Be careful!"
+If persist is set, the procedure does not remove itself after being
+called once. This is potentially very dangerous if your condition
+function is computationally expensive (or, y'know, monetarily
+expensive). Be careful!"
   (let* ((arg-list (append (list condition-p-function
 				 action-function
 				 (circe-actions--gensym)
@@ -228,7 +235,7 @@ something is causing errors constantly"
                         (and (not bool-1) bool-2))))
         (list-1-null (null list-1))
         (list-2-null (null list-2)))
-    (cond ((funcall xor-func list-1-null list-2-null)
+    (cond ((circe-actions--xor list-1-null list-2-null)
            (error "circe-actions-plistify didn't plistify this event correctly! plist-keys: %s \n arglist: %s" list-1 list-2))
           ((null list-1) nil)
           (t
@@ -290,9 +297,6 @@ starting with ':'."
 ;;     (string-prefix-p \"fsbot\" (plist-get easy-args :fq-username))))
 
 ;; This is a function that is fit for registering on circe's handler table."
-
-;; this is the real slim shady
-;; but it needs circe-actions--normalize-args to be set up.
 (defmacro with-circe-actions-closure (&rest args)
   (let* ((args (circe-actions--normalize-args args))
          (prefix (or (plist-get args :prefix)
