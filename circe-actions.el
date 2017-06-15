@@ -4,7 +4,7 @@
 
 
 ;; Author: alphor
-;; Version: 0.0.4
+;; Version: 0.0.5
 ;; Keywords: circe callback handler
 
 ;; Utility functions for interfacing with circe-irc-handler-table
@@ -86,8 +86,8 @@ contents - text payload of the event"
       (let ((args (cons server-proc (cons event rest-args))))
 	(when (apply condition-p-function args)
 	  (unless persist
-	    (circe-actions-deactivate-function symbol event))
-	  (apply action-function args))))))
+            (circe-actions-deactivate-function symbol event))
+          (apply action-function args))))))
 
 (defun circe-actions-deactivate-function (handler-function event)
   "Remove HANDLER-FUNCTION from EVENT bucket in circe-irc-handler-table, and remove it from the alist, in that order."

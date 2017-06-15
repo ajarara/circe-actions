@@ -1,7 +1,7 @@
 (source gnu)
 (source melpa)
 
-(package "circe-actions" "0.0.14" "Callback primitives for circe events")
+(package "circe-actions" "0.0.5" "Callback primitives for circe events")
 
 (depends-on "circe" "irc" "subr")
 
