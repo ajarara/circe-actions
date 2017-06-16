@@ -91,6 +91,8 @@ contents - text payload of the event"
 
 (defun circe-actions-deactivate-function (handler-function event)
   "Remove HANDLER-FUNCTION from EVENT bucket in circe-irc-handler-table, and remove it from the alist, in that order."
+  ;; the order of these are significant, for reasons similar but opposite
+  ;; see the comments in circe-actions-activate-function
   (irc-handler-remove (circe-irc-handler-table)
 		      event
 		      handler-function)
@@ -107,7 +109,7 @@ contents - text payload of the event"
   activated.
 
 Otherwise, add the HANDLER-FUNCTION to the
-circe-actions-handlers-alist (with a key of symbol and HANDLER), then
+circe-actions-handlers-alist (with a key of symbol and EVENT), then
 place it at event in the hash-table obtained from circe's irc handler table."
   (let ((alist-len (length circe-actions-handlers-alist)))
     (if (>= alist-len circe-actions-maximum-handlers)
@@ -115,6 +117,11 @@ place it at event in the hash-table obtained from circe's irc handler table."
               circe-actions-maximum-handlers
               event)
       (progn
+        ;; the order of these are significant, especially when considering
+        ;; that if you put it on the handler table first, the event may fire
+        ;; before the event is actually added to the handler alist, which
+        ;; means the handler will probably error during deactivation
+        
 	;; add the handler-function to the list
 	(setq circe-actions-handlers-alist
 	      (cons (list handler-function event) circe-actions-handlers-alist))

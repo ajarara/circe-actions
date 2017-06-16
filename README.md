@@ -228,3 +228,55 @@ The persistence case is exactly the same, except it is never deactivated. It mus
 Now that we have a nice interface to creating predicate and action functions, we should rewrite all of the utilities, and farm them out to circe-actions-utils.el, so that they can be loaded in as needed.
 
 A nicety would be to emulate iptables chains. This cuts down on the problem of 'how to interactively remove errant rules' without removing everything.
+
+You can deactivate functions by equality. That is... 
+
+``` elisp
+;; eq tests if the two lisp objects are references to the same obj
+(eq (with-circe-actions-closure t)
+    (with-circe-actions-closure t))
+;; => nil
+
+(with-circe-actions-closure (message "%s" :contents))
+;; => (lambda (&rest circe-actions--args) (let ((circe-actions--plistified-args (circe-actions-plistify circe-actions--args nil))) (message "%s" (plist-get circe-actions--plistified-args :contents))))
+
+;; pretty printed:
+(lambda (&rest circe-actions--args)
+  (let ((circe-actions--plistified-args
+         (circe-actions-plistify circe-actions--args nil)))
+    (message "%s" (plist-get circe-actions--plistified-args :contents))))
+
+
+(circe-actions-activate-function
+  "irc.message"
+  (with-circe-actions-closure
+    (message "%s" :contents)))
+;; => (circe-actions--gensym-##)
+    
+;; feel free to pause here and wait for a message
+;; to come into the minibuffer to verify it works
+
+;; or trust the package itself:
+(circe-actions-is-active-p
+  "irc.message"
+  (with-circe-actions-closure
+    (message "%s" :contents)))
+;; => (circe-actions--gensym-##)
+   
+
+(circe-actions-deactivate-function
+ "irc.message"
+ (lambda (&rest circe-actions--args)
+   (let ((circe-actions--plistified-args
+          (circe-actions-plistify circe-actions--args nil)))
+     (message "%s" (plist-get circe-actions--plistified-args :contents))))
+;; => nil
+    
+(circe-actions-is-active-p
+  "irc.message"
+  (with-circe-actions-closure
+    (message "%s" :contents)))
+;; => nil
+```
+
+One thing that might be a little confusing: these return values don't necessarily all point to the same thing. Depending on the function called, you may be looking at the contents of the alist, or you may be looking at the contents of one bucket on the handler table. In some cases this is necessary, and in some, this is arbitrary.I've outlined the necessary cases in the source comments. Don't use these return values, I'm only using them here for demonstration.
