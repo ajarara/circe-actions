@@ -127,22 +127,9 @@ The below will not work if not evaluated with lexical scoping (emacs' default is
   (with-circe-actions-closure
    (message "%s sent: %s" user :contents))))
 ```
-The reason this doesn't work is that once the callback is actually evaluated, `user` is no longer within scope.
+The reason this doesn't work is that once the callback is actually evaluated, `user` is no longer within scope. 
 
-Instead, incorporate it within the closure like so:
-
- ``` elisp
-(let ((user "fsbot"))
- (circe-actions-register
-  "irc.message"
-  (with-circe-actions-closure
-   (let ((user user))
-    (string-prefix-p user :fq-username)))
-  (with-circe-actions-closure
-   (let ((user user))
-    (message "%s sent: %s" user :contents)))))
-```
-
+There isn't a way to return values without resorting to creating another callback, nested inside it. Here is an example of this:
 
 ## Non-callback style registration
 As mentioned in [quick usage](#quick-usage), circe-actions is designed for callbacks. However it certainly is possible that we want to capture the nth event, or wait for a series of conditions to happen in order before doing something, or some other creative scenario. There are only two functions necessary to use here: circe-actions-activate-function, and circe-actions-deactivate-function.
@@ -150,7 +137,7 @@ As mentioned in [quick usage](#quick-usage), circe-actions is designed for callb
 Also mentioned in the quick usage section, activation of a function with respect to a specific event makes it get called _every time_ the event occurs. This means that we have to handle the deactivation step ourselves (unless we don't want to deactivate the function, of course).
 
 ``` elisp
-;; we need closures to illustrate this example without descending into madness
+;; we need closures to illustrate this example
 (setq lexical-binding t)
 (setq event "irc.message")
 

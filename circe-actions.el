@@ -56,7 +56,7 @@
   ACTION-FUNCTION when CONDITION-P-FUNCTION
 
 SYMBOL should be uninterned, but doesn't have to be. This is not the
-same symbol(s) passed to circe-actions-register.
+same symbol passed to circe-actions-register.
 EVENT is a string key, like irc.message obtained from circe-irc-handler-table
 
 if PERSIST is non-nil, do not remove the symbol from the handler
@@ -346,6 +346,7 @@ starting with ':'."
                  (cons head
                        (circe-actions--normalize-args (cdr args))))))))
          
+;; XXX these should be stripped out, they're no longer necessary.
 ;; -------------------- utility functions? Sure! --------------------
 
 (defun circe-actions-irc-message-contents (server-proc event fq-username channel contents)
