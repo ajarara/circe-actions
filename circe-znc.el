@@ -27,7 +27,8 @@
 (defvar circe-znc-collect-timeout 10
   "Number of seconds to wait before deactivating listener for some
   extended ZNC output (AKA to a buffer).  Raise this if output is cut
-  off (ie missing help messages). Lower this if subsequent in")
+  off (ie missing help messages). Lower this if subsequent requests
+  are piped to the same buffer.")
 
 (defvar circe-znc-controlpanel-table
   (let ((hash-table (make-hash-table :test #'equal)))
@@ -42,9 +43,15 @@
     hash-table)
   "A top level hash table linking modules to their options defined in the last version of ZNC (1.6.3). Do not access this directly! Instead use `circe-znc-get-command-table'. This is to allow for modification of this table down the line.")
 
+(defvar circe-znc--help-sentinels
+  (let ((table (make-hash-table :test #'equal)))
+    ;; thank computer jesus for re-builder
+    (puthash "*controlpanel" '(:re "^+=\+\\+=\+\\+$" :times 3) table)
+    table)
+  "set of conditions that determine if help output has ceased. As of now only supports :re and :times as conditions, eventual support for custom timeouts.")
+
 (defun circe-znc-get-command-table (module-name)
   "Get the hash table of a specific ZNC module, given its name."
-  
   (gethash module-name circe-znc-modules-table))
 
 (defun circe-znc-get-command (module-name command)
@@ -100,19 +107,11 @@
         (setq-local circe-znc--is-live-p (lambda () nil)) ; initialize live-p
         newbuf))))
        
-(defvar circe-znc--help-sentinels
-  (let ((table (make-hash-table :test #'equal)))
-    ;; thank computer jesus for re-builder
-    (puthash "*controlpanel" '(:re "^+=\+\\+=\+\\+$" :times 3) table)
-    table)
-  "set of conditions that determine if help output has ceased. As of now only supports :re and :times as conditions, eventual support for custom timeouts.")
 
 (defun circe-znc--deactivation-p-gen (module-name)
   "given a module-name, look up the sentinel in
   `circe-znc--help-sentinels' and generate a closure for it, returning
-  true when the sentinel's :re and :times is satisfied.
-
-Planned: generate get time of closure generation. If time differs by circe-znc-collect-timeout, return true."
+  true when the sentinel's :re and :times is satisfied."
   (let* ((sentinel (gethash module-name circe-znc--help-sentinels))
          (re (plist-get sentinel :re))
          (times (plist-get sentinel :times))
