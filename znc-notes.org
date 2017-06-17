@@ -1,0 +1,15 @@
+* Num modules (100+) makes it prohibitive to define all of their commands
+An alternative is to use help-sentinels to autogenerate them, allowing for custom ones. This isn't a great solution unless the user is willing to pollute their config file, which is unlikely.
+
+A middle of the road solution would be to hard code the most common modules: *controlpanel, *status, *log, etc.. and field suggestions on what else to include, omitting the rest. 
+* To output to buffers
+This is also another pain point. There is no EOT, only predefined patterns we can match on. What if network cuts out before the entire message gets through? Then when the client reconnects half the message trips the sentinel, and the other half is created in a new buffer... no good.
+
+A generic predicate function is best.
+Possibly one that considers 3 things (in order of priority):
+** if help-sentinel has been reached
+This one's easiest. Feed strings into the help sentinel checker, checking on every callback execution. Save the result, then increment it, so that we count the last invocation (that trips the sentinel) as part of the message.
+** if process is the same
+this is relatively easy. When the first callback is executed, record some unique portion of the circe-server-process passed to it. On all subsequent calls, compare, returning false if there are any discrepancies.
+** timeout
+if there's a significantly long timeout between the first reply and some other reply, something has either gone wrong or it's a new request. Tuning the seconds on this one might be difficult. Or just use something reasonable like a minute.
