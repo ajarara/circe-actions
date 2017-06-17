@@ -358,49 +358,6 @@ starting with ':'."
                  (cons head
                        (circe-actions--normalize-args (cdr args))))))))
          
-;; XXX these should be stripped out, they're no longer necessary.
-;; -------------------- utility functions? Sure! --------------------
-
-(defun circe-actions-irc-message-contents (server-proc event fq-username channel contents)
-  (message "%s" contents))
-
-(defalias 'circe-actions-ctcp-message-payload
-  'circe-actions-irc-message-contents)
-
-(defun circe-actions-t (&rest IGNORE)
-  "Use this as a condition if you want the action to always occur on event"
-  t)
-
-;; -------------------- predicate functions --------------------
-
-(defun circe-actions-is-from-p (sender)
-  "Return a condition-func appropriate for circe-actions-register that
-strictly compares the username behind the event with SENDER. 
-
-For a condition-func that uses string-prefix-p, use
-circe-actions-hippie-is-from-p"
-  (lambda (server-proc event fq-username &rest IGNORE)
-    (string-equal sender fq-username)))
-
-(defun circe-actions-hippie-is-from-p (sender)
-  "Return a condition-func appropriate for circe-actions-register that checks if the username behind the event starts with SENDER"
-  (lambda (server-proc event fq-username &rest IGNORE)
-    (string-prefix-p sender fq-username)))
-  
-(defun circe-actions-sent-to-p (channel-or-user)
-  "Return a condition-func appropriate for circe-actions-register that
-strictly compares if the target of an event is CHANNEL-OR-USER. 
-
-For a condition-func that uses string-prefix-p, use
-circe-actions-hippie-is-from-p"
-  (lambda (server-proc event fq-username channel &rest IGNORE)
-    (string-equal channel-or-user channel)))
-
-(defun circe-actions-hippie-sent-to-p (channel-or-user)
-  "Return a condition-func appropriate for circe-actions-register that checks if the target of an event starts with CHANNEL-OR-USER"
-  (lambda (server-proc event fq-username channel &rest IGNORE)
-    (string-prefix-p channel-or-user channel)))
-
 ;;;###autoload
 (defun enable-circe-actions ()
   "load in circe-actions.el. do nothing else."
