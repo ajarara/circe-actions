@@ -84,10 +84,15 @@ contents - text payload of the event"
   (defalias symbol
     (lambda (server-proc event &rest rest-args)
       (let ((args (cons server-proc (cons event rest-args))))
-	(when (apply condition-p-function args)
-	  (unless persist
-            (circe-actions-deactivate-function symbol event))
-          (apply action-function args))))))
+        (condition-case-unless-debug err
+            (when (apply condition-p-function args)
+              (unless persist
+                (circe-actions-deactivate-function symbol event))
+              (apply action-function args))
+          (error
+           (circe-actions-deactivate-function symbol event)
+           (message "Callback failed with error: %s"
+                    (error-message-string err))))))))
 
 (defun circe-actions-deactivate-function (handler-function event)
   "Remove HANDLER-FUNCTION from EVENT bucket in circe-irc-handler-table, and remove it from the alist, in that order."
