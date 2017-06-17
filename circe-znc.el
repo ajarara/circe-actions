@@ -83,7 +83,7 @@
           (setq-local circe-znc--sentinel-reached
                       (circe-znc--sentinel-p string))
           (let ((buffer-read-only nil))
-            (insert string)))
+            (insert string))))))
       
                 
 (defun circe-znc--collect-response-in-buf (bufname string)
