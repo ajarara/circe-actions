@@ -32,7 +32,7 @@
 
 (defvar circe-znc-controlpanel-table
   (let ((hash-table (make-hash-table :test #'equal)))
-    (puthash "help" (lambda () (message "test failed. :(")))
+    (puthash "help" (lambda () (message "test failed. :(")) hash-table)
     hash-table)
   "Do NOT access this directly. Instead, use `circe-znc-get-command'")
 
