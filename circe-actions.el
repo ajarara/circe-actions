@@ -91,7 +91,7 @@ contents - text payload of the event"
               (apply action-function args))
           (error
            (circe-actions-deactivate-function symbol event)
-           (message "Callback failed with error: %s"
+           (warn "Callback failed with error: %s"
                     (error-message-string err))))))))
 
 (defun circe-actions-deactivate-function (handler-function event)
