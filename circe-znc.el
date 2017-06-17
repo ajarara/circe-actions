@@ -32,7 +32,7 @@
 
 (defvar circe-znc-controlpanel-table
   (let ((hash-table (make-hash-table :test #'equal)))
-    (puthash "help" (lambda () (message "Test failed!")) hash-table)
+    (puthash "help" (lambda () (message "test failed. :(")))
     hash-table)
   "Do NOT access this directly. Instead, use `circe-znc-get-command'")
 
@@ -58,7 +58,6 @@
   "Get appropriate command from module, given its name. Usage:
   (circe-znc-get-command \"*status\" \"broadcast\")
   => (lambda (&optional broadcast-string) ...)"
-  
   (let ((module-commands (gethash module-name circe-znc-modules-table)))
     (gethash command module-commands)))
      
@@ -76,6 +75,17 @@
                     (circe-znc-get-command-table module))))
 
 
+(defun circe-znc--collect-response-in-buf (module-name suffix string)
+  (let* ((bufname (concat "* " module-name suffix " *"))
+         (buf (circe-znc--get-buffer bufname)))
+    (if (funcall circe-znc--buf-is-live-p)
+        (progn
+          (setq-local circe-znc--sentinel-reached
+                      (circe-znc--sentinel-p string))
+          (let ((buffer-read-only nil))
+            (insert string)))
+      
+                
 (defun circe-znc--collect-response-in-buf (bufname string)
   "if no buffer, create it and display it.
 
@@ -88,7 +98,7 @@
     ;; pop-to-buffer instead?
     (display-buffer buffer)))
 
-(defun circe-znc--get-buffer-create (bufname)
+(defun circe-znc--get-buffer (bufname)
   "If circe-znc--output-stale is set, clear the buffer.
  This means that the associated handler has been deactivated!
  (An alternate implementation might be to associate the symbol as a
@@ -104,7 +114,7 @@
     (let ((newbuf (generate-new-buffer bufname)))
       (with-current-buffer newbuf
         (circe-znc-output-mode)
-        (setq-local circe-znc--is-live-p (lambda () nil)) ; initialize live-p
+        (setq-local circe-znc--is-live-p (lambda () t)) ; initialize live-p
         newbuf))))
        
 
@@ -121,6 +131,12 @@
           (if (<= times matches)
               t
             (setq matches (1+ matches)))))))
+
+(defun circe-znc--is-live-p-gen ()
+  "As of now, just check to see if the re sentinels have been hit."
+  (lambda ()
+    circe-znc--is-live-p))
+
 
 (define-derived-mode circe-znc-output-mode
   special-mode

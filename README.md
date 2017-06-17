@@ -1,4 +1,5 @@
 # circe-actions.el
+> Now with minimal hair loss.
 
 [Circe][] is an IRC client for emacs sporting what most would call sane defaults. It has lots of features, not least of which is the ability to run arbitrary elisp code on many events.
 

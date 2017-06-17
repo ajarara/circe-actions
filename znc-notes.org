@@ -12,4 +12,15 @@ This one's easiest. Feed strings into the help sentinel checker, checking on eve
 ** if process is the same
 this is relatively easy. When the first callback is executed, record some unique portion of the circe-server-process passed to it. On all subsequent calls, compare, returning false if there are any discrepancies.
 ** timeout
-if there's a significantly long timeout between the first reply and some other reply, something has either gone wrong or it's a new request. Tuning the seconds on this one might be difficult. Or just use something reasonable like a minute.
+if there's a significantly long timeout between the first reply and some other reply, something has either gone wrong or it's a new request. Tuning the seconds on this one might be difficult. Or just use something reasonable like a 10 seconds
+* Not robust?
+This is kind of a ridiculous amount of spec for something that I'm using a couple of times a day, max. About the only thing I want is a pretty output for help.
+* collect-response-in-buf
+check circe-znc--finished-output
+** we have sentinels
+we may have arbitrary metrics
+top level function?
+so.. check if any of them are satisfied already.
+
+
+
