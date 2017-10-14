@@ -130,8 +130,6 @@ The below will not work if not evaluated with lexical scoping (emacs' default is
 ```
 The reason this doesn't work is that once the callback is actually evaluated, `user` is no longer within scope. 
 
-There isn't a way to return values without resorting to creating another callback, nested inside it. Here is an example of this:
-
 ## Non-callback style registration
 As mentioned in [quick usage](#quick-usage), circe-actions is designed for callbacks. However it certainly is possible that we want to capture the nth event, or wait for a series of conditions to happen in order before doing something, or some other creative scenario. There are only two functions necessary to use here: circe-actions-activate-function, and circe-actions-deactivate-function.
 

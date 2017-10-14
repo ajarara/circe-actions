@@ -341,6 +341,13 @@ starting with ':'."
                  ((equal head :expr)
                   ;; hm. issue here is :expr can be followed by just :contents
                   ;; or even an atom! Not going to validate the contents.
+                  
+                  ;; although evaluating atoms doesn't really
+                  ;; constitute a valid handler in the sense that
+                  ;; nothing is done on the event, evaluating symbols
+                  ;; doesn't even push them to the message queue.
+                  ;; the tradeoff here is between program correctness
+                  ;; and flexibility
                   (cons head
                         (cons (cadr args)
                               (circe-actions--normalize-args (cddr args)))))
